@@ -3,7 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'reac
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Login() {
-  // Puxamos a função de login e o estado de carregamento da nossa "memória global"
   const { signIn, isLoading } = useAuth();
 
   return (
