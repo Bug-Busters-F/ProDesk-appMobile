@@ -2,21 +2,23 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker'; 
+import { useRouter } from 'expo-router';
 
-export default function Tickets() {
+export default function newTicket() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('suporte'); 
+  const [category, setCategory] = useState('suporte');
+  const router = useRouter();
 
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-white"
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pt-12">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pt-20">
         
         <View className="flex-row items-center mb-8">
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#1e293b" />
           </TouchableOpacity>
           <Text className="flex-1 text-center text-lg font-bold text-slate-800 mr-6">
@@ -70,7 +72,7 @@ export default function Tickets() {
         </View>
 
         <TouchableOpacity 
-          className="w-full border-2 border-dashed border-slate-200 rounded-xl p-6 flex-row items-center justify-center mb-8"
+          className="w-full border-2 border-dashed border-slate-300 rounded-xl p-6 flex-row items-center justify-center mb-8"
         >
           <View className="bg-orange-100 p-2 rounded-lg mr-4">
             <Ionicons name="attach" size={20} color="#f97316" />
