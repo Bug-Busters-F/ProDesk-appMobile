@@ -40,6 +40,13 @@ export default function ClientLayout() {
         }}
       />
 
+      <Tabs.Screen 
+        name="newTicket" 
+        options={{
+          href: null,
+        }}
+      />
+
     </Tabs>
   );
 }
