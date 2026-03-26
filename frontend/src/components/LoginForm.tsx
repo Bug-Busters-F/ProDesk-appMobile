@@ -1,8 +1,7 @@
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup'
-import { User } from "@/contexts/AuthContext";
+import * as yup from 'yup' 
 
 const loginValidationSchema = yup.object().shape({
         email: yup
