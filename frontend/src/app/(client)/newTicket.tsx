@@ -42,23 +42,6 @@ export default function newTicket() {
         </View>
 
         <View className="mb-6">
-          <Text className="text-slate-700 font-semibold mb-2">Categoria</Text>
-          <View className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-            <Picker
-              selectedValue={category}
-              onValueChange={(itemValue) => setCategory(itemValue)}
-              dropdownIconColor="#64748b"
-              style={{ height: 56, width: '100%' }}
-            >
-              <Picker.Item label="Suporte Técnico" value="suporte" />
-              <Picker.Item label="Financeiro" value="financeiro" />
-              <Picker.Item label="Dúvidas Gerais" value="duvidas" />
-              <Picker.Item label="Sugestões" value="sugestoes" />
-            </Picker>
-          </View>
-        </View>
-
-        <View className="mb-6">
           <Text className="text-slate-700 font-semibold mb-2">Descrição Detalhada</Text>
           <TextInput
             placeholder="Descreva o que está acontecendo com o máximo de detalhes..."
