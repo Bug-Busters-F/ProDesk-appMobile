@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
         setTimeout(() => {
             setUser({
                 id: '123',
-                name: role === 'cliente' ? 'Joao Cliente' : 'Maria Atendente',
+                name: 'Joao Silva',
                 email: 'teste@email.com',
                 role: role
             })
