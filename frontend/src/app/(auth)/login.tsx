@@ -7,7 +7,7 @@ export default function Login() {
   const { signIn, isLoading } = useAuth();
 
   return (
-    <SafeAreaView className='flex-1 px-4'>
+    <SafeAreaView className='flex-1 px-4 bg-stone-50'>
       {/* Logo ProDesk */}
       <View className='flex items-center mb-14'>
         <Image
@@ -25,7 +25,7 @@ export default function Login() {
           Bem-Vindo
         </Text>
         <Text className='text-lg mb-9'>
-          Faca login para acessar sua conta {/* Colocar cedilha */}
+          Faça login para acessar sua conta 
         </Text>
       </View>
 
@@ -36,12 +36,16 @@ export default function Login() {
 
       {/* Regsitro e Recuperar Senha */}
       <View className='items-center'>
-        <Text className='mb-4 text-orange-500'>
+        <TouchableOpacity onPress={() => {/* Funcao do Redirect */}}>
+          <Text className='mb-4 text-orange-500'>
           Esqueci minha senha
         </Text>
-        <Text className='mb-24 underline text-gray-500'>
-          Solcitar Acesso
-        </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => {/* Funcao do Redirect */}}>
+          <Text className='mb-24 underline text-gray-500'>
+            Solicitar Acesso
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Apenas para testar acesso/redirect */}
@@ -73,6 +77,13 @@ export default function Login() {
         >
           <Text className="text-white font-bold text-lg">Adm</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Footer */}
+      <View className='items-center flex-1 justify-end pb-8'>
+        <Text className='text-sm text-gray-300'>
+          © 2026 ProDesk. Todos os direitos reservados.
+        </Text>
       </View>
     </SafeAreaView>
   );
