@@ -1,22 +1,37 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker'; 
 import { useRouter } from 'expo-router';
 
 export default function newTicket() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('suporte');
   const router = useRouter();
+  const handleSendTicket = () => {
+    // 1. Aqui POST para API
+    // const response = await api.post('/tickets', { title, description... });
+
+    const ticketId = '12345'; // Simulação do ID gerado
+    router.replace({
+      pathname: '/(client)/ticket/[id]',
+      params: { id: ticketId },
+    });
+  };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-white"
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pt-20">
-        
         <View className="flex-row items-center mb-8">
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#1e293b" />
@@ -54,9 +69,7 @@ export default function newTicket() {
           />
         </View>
 
-        <TouchableOpacity 
-          className="w-full border-2 border-dashed border-slate-300 rounded-xl p-6 flex-row items-center justify-center mb-8"
-        >
+        <TouchableOpacity className="w-full border-2 border-dashed border-slate-300 rounded-xl p-6 flex-row items-center justify-center mb-8">
           <View className="bg-orange-100 p-2 rounded-lg mr-4">
             <Ionicons name="attach" size={20} color="#f97316" />
           </View>
@@ -65,10 +78,9 @@ export default function newTicket() {
             <Text className="text-slate-400 text-xs">PDF, JPG ou PNG de até 5MB</Text>
           </View>
         </TouchableOpacity>
-
-        <TouchableOpacity 
+        <TouchableOpacity
+          onPress={handleSendTicket}
           className="bg-orange-500 w-full h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-300 mb-4"
-          activeOpacity={0.8}
         >
           <Text className="text-white font-bold text-lg mr-2">Enviar Chamado</Text>
           <Ionicons name="send" size={18} color="white" />
@@ -77,7 +89,6 @@ export default function newTicket() {
         <Text className="text-center text-slate-400 text-xs mb-8">
           Nossa equipe responde em média em até 2 horas úteis.
         </Text>
-
       </ScrollView>
     </KeyboardAvoidingView>
   );
