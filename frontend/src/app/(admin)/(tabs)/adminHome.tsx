@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import { useAuth } from "../../contexts/AuthContext";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { useAuth } from "../../../contexts/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from '@expo/vector-icons/Feather';
 
@@ -15,9 +15,9 @@ export default function Home() {
 
         <TouchableOpacity 
           onPress={signOut}
-          className="bg-red-500 px-8 py-4 rounded-xl"
+          className="px-8 py-4 rounded-xl"
         >
-          <Feather name="log-out" size={24} color="white" />
+          <Feather name="log-out" size={24} color="orange" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>

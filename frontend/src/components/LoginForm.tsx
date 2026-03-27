@@ -35,7 +35,7 @@ export default function LoginForm () {
                     name="email"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16"
+                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
                             placeholder="Digite seu email"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -61,7 +61,7 @@ export default function LoginForm () {
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16"
+                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
                             placeholder="Digite sua senha"
                             onBlur={onBlur}
                             onChangeText={(text) => {
