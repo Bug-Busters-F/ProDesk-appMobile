@@ -1,7 +1,6 @@
 import '../../global.css';
 import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
 import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 
 function InitialLayout () {
@@ -25,18 +24,12 @@ function InitialLayout () {
         }  else if (user.role === 'atendente') {
           router.replace('/(agent)/agentHome')
         }  else if (user.role === 'admin') {
-          router.replace('/(admin)/adminHome')
+          router.replace('/(admin)/(tabs)/adminHome')
         }
     }
   }, [user, isLoading, segments, pathname])
 
-  if (isLoading) {
-    return(
-      <View className='flex-1 justify-center items-center'>
-        <ActivityIndicator size="large" color="orange" />
-      </View>
-    )
-  }
+  
 
   return <Slot />
 }
