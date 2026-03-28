@@ -55,11 +55,7 @@ export default function Login() {
           onPress={() => signIn('cliente')}
           disabled={isLoading}
         >
-          {isLoading ? (
-            <ActivityIndicator color="#000" />
-          ) : (
-            <Text className="text-white font-bold text-lg">Cli</Text>
-          )}
+          <Text className="text-white font-bold text-lg">Cli</Text>  
         </TouchableOpacity>
 
         <TouchableOpacity

@@ -27,21 +27,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
         setTimeout(() => {
             setUser(null)
             setIsLoading(false)
-        }, 1000)
+        }, 1250)
     }, [])
 
     const signIn = async (role: UserRole) => {
         setIsLoading(true)
-
-        setTimeout(() => {
-            setUser({
-                id: '123',
-                name: 'Joao Silva',
-                email: 'teste@email.com',
-                role: role
-            })
-            setIsLoading(false)
-        }, 1000)
+        setUser({
+            id: '123',
+            name: 'Joao Silva',
+            email: 'teste@email.com',
+            role: role
+        })
+        setIsLoading(false)
     }
 
     const signOut = () => {

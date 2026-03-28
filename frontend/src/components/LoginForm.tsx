@@ -1,8 +1,7 @@
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup'
-import { User } from "@/contexts/AuthContext";
+import * as yup from 'yup' 
 
 const loginValidationSchema = yup.object().shape({
         email: yup
@@ -36,7 +35,7 @@ export default function LoginForm () {
                     name="email"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16"
+                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
                             placeholder="Digite seu email"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -62,7 +61,7 @@ export default function LoginForm () {
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16"
+                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
                             placeholder="Digite sua senha"
                             onBlur={onBlur}
                             onChangeText={(text) => {
