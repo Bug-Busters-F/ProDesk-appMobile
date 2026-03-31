@@ -7,24 +7,32 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-export default function newTicket() {
+export default function NewTicket() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const router = useRouter();
+
   const handleSendTicket = () => {
-    // 1. Aqui POST para API
+    if (!title.trim() || !description.trim()) {
+      Alert.alert("Campos Obrigatórios", "Por favor, preencha o título e a descrição antes de enviar.");
+      return;
+    }
+
+    // POST para API
     // const response = await api.post('/tickets', { title, description... });
 
-    const ticketId = '12345'; // Simulação do ID gerado
+    const ticketId = '12345';
     router.replace({
       pathname: '/(client)/ticket/[id]',
       params: { id: ticketId },
     });
   };
+  const isFormValid = title.trim().length > 0 && description.trim().length > 0;
 
   return (
     <KeyboardAvoidingView
@@ -47,7 +55,9 @@ export default function newTicket() {
         </Text>
 
         <View className="mb-6">
-          <Text className="text-slate-700 font-semibold mb-2">Título do Problema</Text>
+          <Text className="text-slate-700 font-semibold mb-2">
+            Título do Problema <Text className="text-red-500">*</Text>
+          </Text>
           <TextInput
             placeholder="Ex: Falha na conexão com o servidor"
             className="w-full h-14 border border-slate-200 rounded-xl px-4 text-slate-900"
@@ -57,16 +67,22 @@ export default function newTicket() {
         </View>
 
         <View className="mb-6">
-          <Text className="text-slate-700 font-semibold mb-2">Descrição Detalhada</Text>
+          <Text className="text-slate-700 font-semibold mb-2">
+            Descrição Detalhada <Text className="text-red-500">*</Text>
+          </Text>
           <TextInput
             placeholder="Descreva o que está acontecendo com o máximo de detalhes..."
             multiline
             numberOfLines={6}
+            maxLength={500}
             textAlignVertical="top"
             className="w-full p-4 border border-slate-200 rounded-xl text-slate-900 h-40"
             value={description}
             onChangeText={setDescription}
           />
+          <Text className={`text-right text-xs mt-1 ${description.length >= 500 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+            {description.length}/500
+          </Text>
         </View>
 
         <TouchableOpacity className="w-full border-2 border-dashed border-slate-300 rounded-xl p-6 flex-row items-center justify-center mb-8">
@@ -78,9 +94,13 @@ export default function newTicket() {
             <Text className="text-slate-400 text-xs">PDF, JPG ou PNG de até 5MB</Text>
           </View>
         </TouchableOpacity>
+        
         <TouchableOpacity
           onPress={handleSendTicket}
-          className="bg-orange-500 w-full h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-orange-300 mb-4"
+          disabled={!isFormValid}
+          className={`w-full h-16 rounded-2xl flex-row items-center justify-center shadow-lg mb-4 transition-colors ${
+            isFormValid ? 'bg-orange-500 shadow-orange-300' : 'bg-slate-300 shadow-slate-200'
+          }`}
         >
           <Text className="text-white font-bold text-lg mr-2">Enviar Chamado</Text>
           <Ionicons name="send" size={18} color="white" />

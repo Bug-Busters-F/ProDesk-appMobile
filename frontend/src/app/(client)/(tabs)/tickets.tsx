@@ -78,7 +78,10 @@ export default function Tickets() {
           <TicketCard
             key={ticket._id}
             ticket={ticket}
-            onPress={() => console.log('Abrir detalhes do chamado:', ticket._id)}
+            onPress={() => router.push({
+              pathname: '/(client)/ticket/[id]',
+              params: { id: ticket._id }
+            })}
           />
         ))}
 

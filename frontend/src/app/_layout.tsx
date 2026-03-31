@@ -1,5 +1,5 @@
 import '../../global.css';
-import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
+import { useRouter, useSegments, usePathname, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
@@ -38,7 +38,7 @@ function InitialLayout () {
     )
   }
 
-  return <Slot />
+  return <Stack screenOptions={{ headerShown: false }} />
 }
 
 export default function RootLayout() {

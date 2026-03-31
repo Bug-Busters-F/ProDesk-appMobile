@@ -1,0 +1,46 @@
+import React from 'react';
+import { View, Text } from 'react-native';
+
+export type MessageType = {
+  id: string;
+  text: string;
+  sender: 'USER' | 'BOT' | 'AGENT';
+  agentName?: string;
+  time: string;
+};
+
+type Props = {
+  message: MessageType;
+};
+
+export function MessageBubble({ message }: Props) {
+  const isUser = message.sender === 'USER';
+
+  return (
+    <View className={`mb-6 ${isUser ? 'items-end' : 'items-start'}`}>
+      <Text className="text-slate-400 text-xs mb-1 mx-2">
+        {isUser ? `Você • ${message.time}` : `${message.agentName || 'Assistente'} • ${message.time}`}
+      </Text>
+      
+      <View className="flex-row items-end">
+        {!isUser && (
+          <View className="w-8 h-8 bg-slate-300 rounded-full mr-2 mb-1 items-center justify-center">
+             <Text className="text-white font-bold text-xs">
+                {message.agentName ? message.agentName.charAt(0) : 'B'}
+             </Text>
+          </View>
+        )}
+
+        <View 
+          className={`p-4 rounded-2xl max-w-[80%] ${
+            isUser 
+              ? 'bg-orange-100 rounded-tr-sm' 
+              : 'bg-slate-50 border border-slate-100 rounded-tl-sm'
+          }`}
+        >
+          <Text className="text-slate-800 leading-5">{message.text}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
