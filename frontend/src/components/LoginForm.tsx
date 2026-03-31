@@ -1,7 +1,9 @@
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup' 
+import { useAuth } from "@/contexts/AuthContext";
+import { router } from "expo-router";
 
 const loginValidationSchema = yup.object().shape({
         email: yup
@@ -19,8 +21,29 @@ export default function LoginForm () {
         mode: 'onSubmit'
     })
 
-    const handleLogin = (data: { email: string, password: string}) => {
-        console.log("Email e senha", data)
+    const { signIn } = useAuth()
+
+    const handleLogin = async (data: { email: string, password: string }) => {
+        console.log('Tentando logar com:', data)
+        try {
+            const role = await signIn(data.email, data.password)
+
+            switch(role) {
+                case 'admin':
+                router.replace('/(admin)/(tabs)/adminHome');
+                break;
+            case 'support':
+                router.replace('/(support)/supportHome'); 
+                break;
+            case 'client':
+                router.replace('/(client)/(tabs)/clientHome');
+                break;
+            default:
+                Alert.alert('Erro', 'Tipo de usuário não reconhecido.');
+            }
+        } catch (error) {
+            Alert.alert("Erro", "Email ou senha incorretos")
+        }
     }
 
     return (

@@ -48,32 +48,7 @@ export default function Login() {
         </TouchableOpacity>
       </View>
 
-      {/* Apenas para testar acesso/redirect */}
-      <View className="flex-row justify-around">
-        <TouchableOpacity
-          className="bg-orange-500 px-4 rounded-xl justify-center items-center h-14 w-20"
-          onPress={() => signIn('cliente')}
-          disabled={isLoading}
-        >
-          <Text className="text-white font-bold text-lg">Cli</Text>  
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="bg-orange-500 px-4 rounded-xl justify-center items-center h-14 w-20"
-          onPress={() => signIn('atendente')}
-          disabled={isLoading}
-        >
-          <Text className="text-white font-bold text-lg">Ate</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="bg-orange-500 px-4 rounded-xl items-center justify-center h-14 w-20"
-          onPress={() => signIn('admin')}
-          disabled={isLoading}
-        >
-          <Text className="text-white font-bold text-lg">Adm</Text>
-        </TouchableOpacity>
-      </View>
+      
 
       {/* Footer */}
       <View className='items-center flex-1 justify-end pb-8'>
