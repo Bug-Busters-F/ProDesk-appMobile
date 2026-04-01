@@ -1,21 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, FlatList, 
-  KeyboardAvoidingView, Platform, ActivityIndicator 
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { io, Socket } from 'socket.io-client';
-import { MessageBubble, MessageType } from '../../../components/chat/MessageBubble';
+import { MessageBubble, MessageType } from '@/components/chat/MessageBubble';
 import { useAuth } from '@/contexts/AuthContext';
 
 const BACKEND_URL = 'http://10.0.2.2:3000';
 
-export default function TicketChatScreen() {
+export default function AgentTicketChatScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams(); // Esse é o chatId
-  const { user } = useAuth(); // Pegamos o cliente logado para ser o senderId
+  const { id } = useLocalSearchParams(); 
+  const { user } = useAuth();
   
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<MessageType[]>([]);
@@ -25,48 +22,42 @@ export default function TicketChatScreen() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    // 1. Inicializa a conexão com o Gateway do NestJS
-    socketRef.current = io(BACKEND_URL, {
-      transports: ['websocket'],
-    });
-
+    socketRef.current = io(BACKEND_URL, { transports: ['websocket'] });
     const socket = socketRef.current;
 
     socket.on('connect', () => {
-      console.log('Conectado ao Socket do Backend!');
       socket.emit('entrarChat', { chatId: id });
     });
 
     socket.on('novaMensagem', (msg: any) => {
+      const isMe = msg.senderId === user?.id;
+      
       const incomingMsg: MessageType = {
         id: msg._id,
         text: msg.content,
-        sender: msg.senderId === user?.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
-        agentName: msg.isSystemMessage ? 'Assistente Virtual' : 'Especialista',
+        sender: isMe ? 'USER' : 'AGENT',
+        agentName: isMe ? undefined : 'Cliente', 
         time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, incomingMsg]);
     });
 
-    // 2. BUSCAR O HISTÓRICO REAL NA API
     const fetchHistory = async () => {
       setIsLoadingHistory(true);
       try {
-        // Substitua pelo IP da sua máquina se estiver a testar num telemóvel físico
         const response = await fetch(`${BACKEND_URL}/ProDeskApi/messages/${id}`);
-        
         if (response.ok) {
           const data = await response.json();
-          
-          // Mapear os dados da base de dados para o formato visual do chat
-          const formattedMessages: MessageType[] = data.map((msg: any) => ({
-            id: msg._id,
-            text: msg.content,
-            sender: msg.senderId === user?.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
-            agentName: msg.isSystemMessage ? 'Assistente Virtual' : 'Especialista',
-            time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          }));
-
+          const formattedMessages: MessageType[] = data.map((msg: any) => {
+            const isMe = msg.senderId === user?.id;
+            return {
+              id: msg._id,
+              text: msg.content,
+              sender: isMe ? 'USER' : 'AGENT',
+              agentName: isMe ? undefined : 'Cliente',
+              time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            };
+          });
           setMessages(formattedMessages);
         }
       } catch (error) {
@@ -87,13 +78,11 @@ export default function TicketChatScreen() {
   const handleSendMessage = () => {
     if (!inputText.trim() || !user?.id) return;
 
-    // Em vez de atualizar a tela direto, enviamos para o backend. 
-    // O backend vai salvar e emitir 'novaMensagem' de volta para a gente!
     const payload = {
       chatId: id,
-      senderId: user.id,
+      senderId: user.id, // ID do Atendente enviando
       content: inputText.trim(),
-      isSystemMessage: false, // É uma mensagem de humano
+      isSystemMessage: false,
     };
 
     socketRef.current?.emit('enviarMensagem', payload);
@@ -104,24 +93,19 @@ export default function TicketChatScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         
-        {/* HEADER */}
         <View className="flex-row items-center px-6 py-4 border-b border-slate-100 shadow-sm z-10 bg-white">
           <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2 -ml-2">
             <Ionicons name="arrow-back" size={24} color="#1e293b" />
           </TouchableOpacity>
           <View>
-            <Text className="text-lg font-bold text-slate-800">
-              Protocolo #{typeof id === 'string' ? id.slice(-6).toUpperCase() : 'NOVO'}
-            </Text>
-            <Text className="text-orange-500 font-bold text-xs">ONLINE AGORA</Text>
+            <Text className="text-lg font-bold text-slate-800">Atendimento #{typeof id === 'string' ? id.slice(-6).toUpperCase() : '...'}</Text>
+            <Text className="text-blue-500 font-bold text-xs">SALA DO CLIENTE</Text>
           </View>
         </View>
 
-        {/* ÁREA DO CHAT */}
         {isLoadingHistory ? (
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color="#f97316" />
-            <Text className="text-slate-400 mt-4">Conectando ao atendimento...</Text>
           </View>
         ) : (
           <FlatList
@@ -134,48 +118,24 @@ export default function TicketChatScreen() {
             onContentSizeChange={() => {
               setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
             }}
-            ListHeaderComponent={(
-              <View className="items-center mb-8 mt-2">
-                <View className="bg-orange-50 px-4 py-1 rounded-full border border-orange-100">
-                  <Text className="text-orange-500 font-bold text-xs">INÍCIO DO ATENDIMENTO</Text>
-                </View>
-              </View>
-            )}
-            ListFooterComponent={( <View className="h-4" /> )}
           />
         )}
 
-        {/* BARRA DE INPUT */}
         <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
-          <TouchableOpacity className="p-2">
-            <Feather name="plus-circle" size={24} color="#94a3b8" />
-          </TouchableOpacity>
-          
           <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
             <TextInput
-              placeholder="Digite sua mensagem..."
+              placeholder="Responder ao cliente..."
               className="flex-1 text-slate-800 h-full"
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={handleSendMessage}
             />
-            <TouchableOpacity disabled={!inputText.trim()}>
-              <Feather name="smile" size={20} color={inputText.trim() ? "#f97316" : "#94a3b8"} />
-            </TouchableOpacity>
           </View>
-
           <TouchableOpacity 
             onPress={handleSendMessage}
             disabled={!inputText.trim()}
             className="w-12 h-12 rounded-full items-center justify-center"
-            style={{
-              backgroundColor: inputText.trim() ? '#f97316' : '#e2e8f0',
-              elevation: inputText.trim() ? 4 : 0,
-              shadowColor: '#fdba74',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: inputText.trim() ? 0.4 : 0,
-              shadowRadius: 4,
-            }}
+            style={{ backgroundColor: inputText.trim() ? '#f97316' : '#e2e8f0' }}
           >
             <Ionicons name="send" size={18} color="white" style={{ marginLeft: 4 }} />
           </TouchableOpacity>

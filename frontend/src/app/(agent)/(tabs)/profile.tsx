@@ -9,10 +9,10 @@ export default function Profile() {
     <SafeAreaView className="flex-1 bg-stone-50 justify-center items-center">
       <View className="items-center mb-8">
         <View className="w-24 h-24 bg-orange-100 rounded-full items-center justify-center mb-4">
-          <Text className="text-orange-500 text-3xl font-bold">C</Text>
+          <Text className="text-orange-500 text-3xl font-bold">A</Text>
         </View>
-        <Text className="text-2xl font-bold text-slate-800">Cliente</Text>
-        <Text className="text-slate-500">Empresa Pro6Tech</Text>
+        <Text className="text-2xl font-bold text-slate-800">Atendente</Text>
+        <Text className="text-slate-500">Suporte Técnico</Text>
       </View>
 
       <TouchableOpacity 
