@@ -1,9 +1,11 @@
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup' 
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRouter } from "expo-router";
+import api from "@/services/api";
+
 const userRegisterValidationSchema = yup.object().shape({
     name: yup
         .string()
@@ -12,6 +14,8 @@ const userRegisterValidationSchema = yup.object().shape({
     cnpj: yup
         .string() 
         .required('CNPJ da empresa é obrigatório')
+        .min(14, 'O CNPJ deve ter exatamente 14 digitos')
+        .max(14, 'O CNPJ deve ter exatamente 14 digitos')
     })
     
 export default function RegisterCompanyForm () {
@@ -22,8 +26,20 @@ export default function RegisterCompanyForm () {
                 mode: 'onSubmit'
             })
         
-        const handleRegister = (data: { name: string, cnpj: string }) => {
-            console.log("Dados Prontos para Envio:", data)
+        const handleRegister = async (companyData: { name: string, cnpj: string }) => {
+            try {
+                const cleanCnpj = companyData.cnpj.replace(/\D/g, '')
+
+                const response = await api.post('/company', {
+                    name: companyData.name,
+                    cnpj: cleanCnpj
+                })
+
+                console.log("EMPRESA CADASTRADA: ", response.data)
+                router.replace('/(admin)/(tabs)/companys')
+            } catch (error: any) {
+                Alert.alert("Erro, não foi possivel cadastrar a empresa. Verifique se o cnpj ja esta registrado.")
+            }
         }
     return(
         <KeyboardAwareScrollView>

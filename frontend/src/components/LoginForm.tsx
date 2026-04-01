@@ -24,7 +24,6 @@ export default function LoginForm () {
     const { signIn } = useAuth()
 
     const handleLogin = async (data: { email: string, password: string }) => {
-        console.log('Tentando logar com:', data)
         try {
             const role = await signIn(data.email, data.password)
 
