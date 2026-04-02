@@ -18,31 +18,20 @@ import api from "@/services/api";
 import { useEffect, useState } from "react";
 
 const userRegisterValidationSchema = yup.object().shape({
-    name: yup
-        .string()
-        .required('O nome completo é obrigatório')
-        .min(3, 'O nome deve ter pelo menos 3 caracteres'),
-    email: yup
-        .string()
-        .required('O email não pode ser vazio')
-        .email('Digite um email válido'),
+    name: yup.string().required('O nome completo é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres'),
+    email: yup.string().required('O email não pode ser vazio').email('Digite um email válido'),
+    userType: yup.string().required('Selecione o tipo de usuário'),
     companyId: yup.string().when('userType', {
         is: 'Client',
         then: (schema) => schema.required('Selecione a empresa para o Cliente'),
         otherwise: (schema) => schema.optional(),
     }),
-    userType: yup
-        .string()
-        .required('Selecione o tipo de usuário'),
-    groupId: yup
-        .string().when('userType', {
-            is: 'Support',
-            then: (schema) => schema.required('Selecione o grupo do antendente'),
-            otherwise: (schema) => schema.optional(),
-        }),
-        
-    temporaryPassword: yup
-        .string()
+    groupId: yup.string().when('userType', {
+        is: 'Support',
+        then: (schema) => schema.required('Selecione o grupo do atendente'),
+        otherwise: (schema) => schema.optional(),
+    }),
+    temporaryPassword: yup.string()
         .required('A senha temporária é obrigatória')
         .min(8, 'A senha deve ter no mínimo 8 caracteres')
         .matches(/[A-Z]/, 'A senha deve ter pelo menos 1 letra maiúscula')
