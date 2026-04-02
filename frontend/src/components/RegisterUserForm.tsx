@@ -1,10 +1,21 @@
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+{/* IMPPLEMENTAR :
+    
+    - EXIBIR, EDITAR E EXCLUIR CLIENTES
+    - EXIBIR, EDITAR E EXCLUIR EMPRESAS
+    - EXIBIR, EDITAR E EXCLUIR GRUPOS 
+
+    */}
+
+
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup' 
 import RNPickerSelect from 'react-native-picker-select';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRouter } from "expo-router";
+import api from "@/services/api";
+import { useEffect, useState } from "react";
 
 const userRegisterValidationSchema = yup.object().shape({
     name: yup
@@ -15,29 +26,101 @@ const userRegisterValidationSchema = yup.object().shape({
         .string()
         .required('O email não pode ser vazio')
         .email('Digite um email válido'),
-    cnpj: yup
-        .string() 
-        .required('CNPJ da empresa é obrigatório'),
+    companyId: yup.string().when('userType', {
+        is: 'Client',
+        then: (schema) => schema.required('Selecione a empresa para o Cliente'),
+        otherwise: (schema) => schema.optional(),
+    }),
     userType: yup
         .string()
         .required('Selecione o tipo de usuário'),
+    groupId: yup
+        .string().when('userType', {
+            is: 'Support',
+            then: (schema) => schema.required('Selecione o grupo do antendente'),
+            otherwise: (schema) => schema.optional(),
+        }),
+        
     temporaryPassword: yup
         .string()
         .required('A senha temporária é obrigatória')
-        .min(8, 'A senha deve ter no mínimo 8 caracteres para segurança'),
+        .min(8, 'A senha deve ter no mínimo 8 caracteres')
+        .matches(/[A-Z]/, 'A senha deve ter pelo menos 1 letra maiúscula')
+        .matches(/[a-z]/, 'A senha deve ter pelo menos 1 letra minúscula')
+        .matches(/[0-9]/, 'A senha deve ter pelo menos 1 número')
+        .matches(/[\W_]/, 'A senha deve ter pelo menos 1 caractere especial'),
 })
 
 export default function RegisterUserForm () {
     const router = useRouter()
+    const [companyList, setCompanyList] = useState<{ label: string, value:string}[]> ([])
+    const [groupList, setGroupList] = useState<{ label: string, value:string}[]> ([])
 
-    const { control, handleSubmit, clearErrors, formState: {errors } } = useForm({
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const [companyRes, groupRes] = await Promise.all([
+                    api.get('/company'),
+                    api.get('/group')
+                ]);
+
+                setCompanyList(companyRes.data.map((c: any) => ({ label: c.name, value: c.id })));
+                setGroupList(groupRes.data.map((g: any) => ({ label: g.name, value: g.id })));
+            } catch (error) {
+                console.log("Erro ao buscar dados iniciais: ", error)
+            }
+        }
+        fetchData();
+    }, [])
+
+    const { control, handleSubmit, clearErrors, watch, formState: {errors } } = useForm({
             resolver: yupResolver(userRegisterValidationSchema),
             mode: 'onSubmit'
         })
+
+    const selectedUserType = watch('userType')
     
-    const handleRegister = (data: { name: string, email: string, cnpj: string, userType: string, temporaryPassword: string}) => {
-        console.log("Dados Prontos para Envio:", data)
+    const handleRegister = async (userData: { name: string, email: string, userType: string, companyId?: string, groupId?: string, temporaryPassword: string}) => {
+        try {
+            const payload: any = {
+                name: userData.name,
+                email: userData.email,
+                password: userData.temporaryPassword,
+            }
+
+            if (userData.userType === 'Client') {
+                payload.companyId = userData.companyId;
+                await api.post('/auth/register/client', payload);
+            } else if (userData.userType === 'Support') {
+                payload.groupId = userData.groupId; 
+                await api.post('/auth/register/support', payload);
+            } else if (userData.userType === 'Admin') {
+                payload.groupId = userData.groupId; 
+                await api.post('/auth/register/admin', payload);
+            }
+
+            Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
+            router.replace('/(admin)/(tabs)/users');
+
+        } catch (error: any) {
+            const status = error.response?.status;
+            const errorMessage = error.response?.data?.message;
+
+            if (status === 400) {
+                if (errorMessage === "Email taken!") {
+                    Alert.alert("Atenção", "Este email já está cadastrado no sistema. Tente utilizar outro.");
+                } else {
+                    Alert.alert("Erro de Validação", "Verifique se os dados estão corretos.");
+                }
+            } else if (status === 403) {
+                Alert.alert("Acesso Negado", "Você não tem permissão para cadastrar este usuário.");
+            } else {
+                Alert.alert("Erro", "Falha na comunicação com o servidor.");
+            }
+            console.log("Erro ao registrar usuário", error)
+        }
     }
+
     return(
         <KeyboardAwareScrollView>
             {/* Campo Nome */}
@@ -89,31 +172,6 @@ export default function RegisterUserForm () {
                 />
                 {errors.email && <Text className="text-xs text-red-500">{errors.email.message}</Text>}
             </View>
-
-            {/* Campo CNPJ */}
-            <View className="mb-5">
-                <Text className="mb-1">
-                    CNPJ
-                </Text>
-                <Controller
-                    control={control}
-                    name="cnpj"
-                    render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
-                            placeholder="Digite apenas os números"
-                            onBlur={onBlur}
-                            onChangeText={(text) => {
-                                onChange(text)
-                                clearErrors("cnpj") 
-                            }}
-                            value={value}
-                            keyboardType="numeric" 
-                        />
-                    )}
-                />
-                {errors.cnpj && <Text className="text-xs text-red-500 mt-1">{errors.cnpj.message}</Text>} 
-            </View>
             
             {/* Campo Tipo de Usuario */}
             <View className="mb-5">
@@ -150,7 +208,7 @@ export default function RegisterUserForm () {
                                 items={[
                                     { label: 'Administrador', value: 'Admin' },
                                     { label: 'Cliente', value: 'Client' },
-                                    { label: 'Atendente', value: 'Attendant' },
+                                    { label: 'Atendente', value: 'Support' },
                                 ]}
                             />
                         </View>
@@ -158,6 +216,56 @@ export default function RegisterUserForm () {
                 />
                 {errors.userType && <Text className="text-xs text-red-500 mt-1">{errors.userType.message}</Text>}
             </View>
+
+            {/* Campo Grupo */}
+            {(selectedUserType === 'Support' || selectedUserType === 'Admin') && (
+                <View className="mb-5">
+                    <Text className="mb-1">Grupo</Text>
+                    <Controller
+                        control={control}
+                        name="groupId"
+                        render={({ field: { onChange, value } }) => (
+                            <View className="border border-gray-400 rounded-lg h-16 justify-center focus:border-orange-700">
+                                <RNPickerSelect
+                                    onValueChange={(itemValue) => {
+                                        onChange(itemValue);
+                                        clearErrors("groupId");
+                                    }}
+                                    value={value}
+                                    placeholder={{ label: 'Selecione o grupo...', value: null }}
+                                    items={groupList}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.groupId && <Text className="text-xs text-red-500 mt-1">{errors.groupId.message}</Text>}
+                </View>
+            )}
+
+            {/* Campo Empresa */}
+            {selectedUserType === 'Client' && (
+                <View className="mb-5">
+                    <Text className="mb-1">Empresa</Text>
+                    <Controller
+                        control={control}
+                        name="companyId"
+                        render={({ field: { onChange, value } }) => (
+                            <View className="border border-gray-400 rounded-lg h-16 justify-center focus:border-orange-700">
+                                <RNPickerSelect
+                                    onValueChange={(itemValue) => {
+                                        onChange(itemValue);
+                                        clearErrors("companyId");
+                                    }}
+                                    value={value}
+                                    placeholder={{ label: 'Selecione a empresa...', value: null }}
+                                    items={companyList}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.companyId && <Text className="text-xs text-red-500 mt-1">{errors.companyId.message}</Text>}
+                </View>
+            )}
             
             {/* Campo Senha Temporaria */}
             <View className="mb-8">
