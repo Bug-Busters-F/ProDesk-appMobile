@@ -1,13 +1,75 @@
-import { useRouter } from 'expo-router'; 
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useRouter } from 'expo-router'; 
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import UserCard from '@/components/UserCard';
+import api from '@/services/api';
+
+interface User {
+    id: string
+    name: string
+    email: string
+    role: string
+}
 
 export default function Users () {
     const router = useRouter();
-    const [focused, setFocused] = useState(false);  
+    const [focused, setFocused] = useState(false);
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchUsers = async () => {
+        try {
+            setLoading(true)
+            const response = await api.get('/user')
+            setUsers(response.data.data)
+        } catch (error) {
+            console.error("Erro ao buscar usuários:", error);
+            Alert.alert("Erro", "Não foi possível carregar a lista de usuários.");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchUsers()
+        }, [])
+    )
+
+    const roleNames: Record<string, string> = {
+        'admin': 'Administrador',
+        'client': 'Cliente',
+        'support': 'Atendente'
+
+    }
+
+    const handleDelete = (id: string, name: string) => {
+        Alert.alert(
+            "Excluir usuário",
+            `Tem certeza que deseja excluir o usuário ${name}?`,
+            [
+                {text: "Cancelar", style: "cancel"},
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/user/${id}`)
+                            setUsers(prev => prev.filter(user => user.id !== id))
+                            Alert.alert("Sucesso", "Usuário excluído!")
+                        } catch (error) {
+                            console.log("Erro ao deletar", error)
+                            Alert.alert("Erro", "Não foi possível excluir o usuário")
+                        }
+                    }
+                }
+            ]
+        )
+    }
+
+    {/* handleEdit aqui */}
 
     return (
         <SafeAreaView className="flex-1 px-4 bg-stone-50 mt-6">
@@ -60,13 +122,30 @@ export default function Users () {
                     />
                 </View>
 
-                <UserCard
-                    name="Renan Tomasi"
-                    email="renan@empresa.com.br"
-                    role="Administrador"
-                    onEdit={() => console.log("Editar")}
-                    onDelete={() => console.log("Excluir")}
-                />
+                {loading ? (
+                    <ActivityIndicator size="large" color="#F97316" className='mt-10' />
+                ) : (
+                    users?.map(user => {
+                        const translatedRole = roleNames[user.role] || user.role
+
+                        return (
+                            <UserCard
+                                key={user.id}
+                                name={user.name}
+                                email={user.email}
+                                role={translatedRole}
+                                onEdit={() => console.log("Editar usuário")}
+                                onDelete={() => handleDelete(user.id, user.name)}
+                            />
+                        )
+                    })
+                )}
+
+                {users.length === 0 && !loading && (
+                    <Text className="text-center text-gray-500 mt-10">
+                        Nenhum usuário encontrado.
+                    </Text>
+                )}
             </ScrollView>
         </SafeAreaView>
     )

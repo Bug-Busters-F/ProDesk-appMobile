@@ -6,6 +6,7 @@ export default function AdminStackLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="registerCompany" />
       <Stack.Screen name="registerUser" />
+      <Stack.Screen name="registerGroup" />
     </Stack>
   );
 }

@@ -1,13 +1,68 @@
-import { useRouter } from 'expo-router'; 
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useRouter } from 'expo-router'; 
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import GroupCard from '@/components/GroupCard';
+import api from '@/services/api';
+import UserCard from '@/components/UserCard';
 
-export default function Users () {
+interface Group {
+    id: string
+    name: string
+    description: string
+}
+
+export default function Groups () {
     const router = useRouter();
-    const [focused, setFocused] = useState(false);  
+    const [focused, setFocused] = useState(false);
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [loading, setLoading] = useState(true); 
+
+    const fetchGroups = async () => {
+        try {
+            setLoading(true)
+            const response = await api.get('/group')
+            setGroups(response.data)
+        } catch (error) {
+            console.error("Erro ao buscar grupos:", error);
+            Alert.alert("Erro", "Não foi possível carregar a lista de grupos.");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchGroups()
+        }, [])
+    )
+
+    const handleDelete = (id: string, name: string) => {
+        Alert.alert(
+            "Excluir grupo",
+            `Tem certeza que deseja excluir o grupo ${name}?`,
+            [
+                {text: "Cancelar", style: "cancel"},
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/group/${id}`)
+                            setGroups(prev => prev.filter(group => group.id !== id))
+                            Alert.alert("Sucesso", "Grupo excluído!")
+                        } catch (error) {
+                            console.log("Erro ao deletar", error)
+                            Alert.alert("Erro", "Não foi possível excluir o grupo")
+                        }
+                    }
+                }
+            ]
+        )
+    }
+
+    {/* handleEdit aqui */}
 
     return (
         <SafeAreaView className="flex-1 px-4 bg-stone-50 mt-6">
@@ -60,13 +115,19 @@ export default function Users () {
                     />
                 </View>
 
-                <GroupCard 
-                    name='Suporte 1'
-                    description='Auxiliar na primeira entrada dos usuarios'
-                    onEdit={() => console.log("Editar")}
-                    onDelete={() => console.log("Excluir")}    
-                />
-
+                {loading ? (
+                    <ActivityIndicator size="large" color="#F97316" className='mt-10' />
+                ) : (
+                    groups?.map(group => (
+                        <GroupCard
+                            key={group.id}
+                            name={group.name}
+                            description={group.description}
+                            onEdit={() => console.log("Editar grupo")}
+                            onDelete={() => handleDelete(group.id, group.name)}
+                        />
+                    ))
+                )}
             </ScrollView>
         </SafeAreaView>
     )

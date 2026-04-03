@@ -36,7 +36,7 @@ export default function RegisterCompanyForm () {
                 })
 
                 console.log("EMPRESA CADASTRADA: ", response.data)
-                router.replace('/(admin)/(tabs)/companys')
+                router.replace('/(admin)/(tabs)/companies')
             } catch (error: any) {
                 Alert.alert("Erro, não foi possivel cadastrar a empresa. Verifique se o cnpj ja esta registrado.")
             }
@@ -104,7 +104,7 @@ export default function RegisterCompanyForm () {
 
             <TouchableOpacity 
                 className="items-center py-5 bg-white border border-gray-300 rounded-lg mb-12" 
-                onPress={() => router.push('/(admin)/(tabs)/companys')}
+                onPress={() => router.push('/(admin)/(tabs)/companies')}
             >
                 <Text className="text-md text-gray-600 font-bold">
                     Cancelar

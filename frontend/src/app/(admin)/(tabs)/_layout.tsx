@@ -13,7 +13,7 @@ export default function AdminTabsLayout () {
         options={{ title: 'Usuáriios', tabBarIcon: ({ color }) => <Feather name="users" size={24} color={color} /> }}
       />
       <Tabs.Screen 
-        name="companys" 
+        name="companies" 
         options={{ title: 'Empresas', tabBarIcon: ({ color }) => <FontAwesome name="building-o" size={24} color={color} /> }}
       />
       <Tabs.Screen 

@@ -18,7 +18,7 @@ export default function UserCard({
 }: Props) {
   return (
     <View
-      className="bg-white rounded-md p-4 mb-4"
+      className="bg-white rounded-lg p-4 mb-4"
       style={{
         elevation: 4,
         shadowColor: "#CDCDCD",
@@ -27,7 +27,7 @@ export default function UserCard({
         shadowRadius: 4,
       }}
     >
-      <View className="flex-row items-center mb-6">
+      <View className="flex-row items-center mb-4">
         <View className="w-12 h-12 rounded-full bg-orange-200 flex items-center justify-center mr-3">
           <FontAwesome name="user" size={18} color="#f97316" />
         </View>
