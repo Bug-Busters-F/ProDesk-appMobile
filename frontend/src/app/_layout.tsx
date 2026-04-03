@@ -19,9 +19,9 @@ function InitialLayout () {
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login')
     } else if (user && (inAuthGroup || isIndex)) {
-        if (user.role === 'cliente') {
+        if (user.role === 'client') {
           router.replace('/(client)/(tabs)/clientHome')
-        }  else if (user.role === 'atendente') {
+        }  else if (user.role === 'support') {
           router.replace('/(agent)/agentHome')
         }  else if (user.role === 'admin') {
           router.replace('/(admin)/(tabs)/adminHome')

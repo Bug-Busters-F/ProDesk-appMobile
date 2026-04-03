@@ -1,15 +1,15 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 
-type Props = {
-  name: string;
-  cnpj: string;
-  status?: "ACTIVE" | "INACTIVE";
-  members?: string[]; 
-  extraMembers?: number;
-  onEdit?: () => void;
-  onDelete?: () => void;
-};
+type Props = { 
+  name: string
+  cnpj: string
+  status?: "ACTIVE" | "INACTIVE"
+  members?: string[];
+  extraMembers?: number
+  onEdit?: () => void
+  onDelete?: () => void
+}
 
 export default function CompanyCard({
   name,
@@ -86,5 +86,5 @@ export default function CompanyCard({
         </View>
       </View>
     </View>
-  );
+  )
 }

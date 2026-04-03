@@ -1,13 +1,67 @@
-import { useRouter } from 'expo-router'; 
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useRouter } from 'expo-router'; 
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather, FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useCallback, useState } from 'react';
 import CompanyCard from '@/components/CompanyCard';
+import api from '@/services/api';
 
-export default function Companys () {
+interface Company {
+    id: string
+    name: string
+    cnpj: string
+}
+
+export default function Companies () {
     const router = useRouter();
-    const [focused, setFocused] = useState(false); 
+    const [focused, setFocused] = useState(false);
+    const [companies, setCompanies] =  useState<Company[]>([])
+    const [loading, setLoading ] = useState(true) 
+
+    const fetchCompanies = async () => {
+        try {
+            setLoading(true)
+            const response = await api.get('/company')
+            setCompanies(response.data)
+        } catch (error) {
+            console.error("Erro ao buscar empresas:", error);
+            Alert.alert("Erro", "Não foi possível carregar a lista de empresas.");
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchCompanies()
+        }, [])
+    )
+
+    const handleDelete = (id: string, name: string) => {
+        Alert.alert(
+            "Excluir empresa",
+            `Tem certeza que deseja excluir a empresa ${name}?`,
+            [
+                {text: "Cancelar", style: "cancel"},
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/company/${id}`)
+                            setCompanies(prev => prev.filter(company => company.id !== id))
+                            Alert.alert("Sucesso", "Empresa excluída!")
+                        } catch (error) {
+                            console.log("Erro ao deletar", error)
+                            Alert.alert("Erro", "Não foi possível excluir a empresa.")
+                        }
+                    }
+                }
+            ]
+        )
+    }
+
+    {/* handleEdit aqui */}
 
     return (
         <SafeAreaView className="flex-1 px-4 bg-stone-50 mt-6">
@@ -75,15 +129,22 @@ export default function Companys () {
                     </View>
                 </View>
 
-                <CompanyCard
-                    name="Tech Solutions Ltda"
-                    cnpj="12.345.678/0001-90"
-                    status="ACTIVE"
-                    members={["JD"]}
-                    extraMembers={4}
-                    onEdit={() => console.log("Editar")}
-                    onDelete={() => console.log("Excluir")}
-                />
+                {loading ? (
+                    <ActivityIndicator size="large" color="#F97316" className='mt-10' />
+                ) : (
+                    companies?.map(company => (
+                        <CompanyCard
+                            key={company.id}
+                            name={company.name}
+                            cnpj={company.cnpj}
+                            status="ACTIVE"
+                            members={["JD"]}
+                            extraMembers={4}
+                            onEdit={() => console.log("Editar")}
+                            onDelete={() => handleDelete(company.id, company.name)}
+                        />
+                    ))
+                )}
             </ScrollView>
         </SafeAreaView>
     )

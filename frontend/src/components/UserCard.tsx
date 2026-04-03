@@ -18,7 +18,7 @@ export default function UserCard({
 }: Props) {
   return (
     <View
-      className="bg-white rounded-md p-4 mb-4"
+      className="bg-white rounded-lg p-4 mb-4"
       style={{
         elevation: 4,
         shadowColor: "#CDCDCD",
@@ -27,7 +27,7 @@ export default function UserCard({
         shadowRadius: 4,
       }}
     >
-      <View className="flex-row items-center mb-6">
+      <View className="flex-row items-center mb-4">
         <View className="w-12 h-12 rounded-full bg-orange-200 flex items-center justify-center mr-3">
           <FontAwesome name="user" size={18} color="#f97316" />
         </View>
@@ -40,22 +40,22 @@ export default function UserCard({
 
       <View className="flex-row justify-between items-center">
         <View className="px-3 py-1 bg-gray-300 rounded-full">
-          <Text className="text-sm text-gray-800">{role}</Text>
+          <Text className="text-sm text-gray-700">{role}</Text>
         </View>
 
         <View className="flex-row">
           <TouchableOpacity
             onPress={onEdit}
-            className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center mr-3"
+            className="w-12 h-12 rounded-full bg-trasparent flex items-center justify-center mr-3"
           >
-            <FontAwesome name="pencil" size={20} color="#374151" />
+            <FontAwesome name="pencil" size={20} color="#94A3B8" />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={onDelete}
-            className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center"
+            className="w-12 h-12 rounded-full bg-transparent flex items-center justify-center"
           >
-            <Feather name="trash-2" size={20} color="#374151" />
+            <Feather name="trash-2" size={20} color="#94A3B8" />
           </TouchableOpacity>
         </View>
       </View>
