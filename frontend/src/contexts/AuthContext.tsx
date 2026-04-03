@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { storage } from '@/utils/storage';
 import api from '@/services/api';
 import { jwtDecode } from "jwt-decode"
 
@@ -27,8 +27,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
 
     useEffect(() => {
         async function loadStorageData() {
-            const storedToken = await SecureStore.getItemAsync('prodesk_token')
-            const storedUser = await SecureStore.getItemAsync('prodesk_user')
+            const storedToken = await storage.getItem('prodesk_token')
+            const storedUser = await storage.getItem('prodesk_user')
 
             if (storedToken && storedUser) {
                 api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
@@ -55,8 +55,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
                 role: decoded.role.toLowerCase() as UserRole
             }
 
-            await SecureStore.setItemAsync('prodesk_token', token)
-            await SecureStore.setItemAsync('prodesk_user', JSON.stringify(userData))
+            await storage.setItem('prodesk_token', token)
+            await storage.setItem('prodesk_user', JSON.stringify(userData))
 
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
@@ -72,8 +72,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
     }
 
     const signOut = async () => {
-        await SecureStore.deleteItemAsync('prodesk_token');
-        await SecureStore.deleteItemAsync('prodesk_user');
+        await storage.removeItem('prodesk_token');
+        await storage.removeItem('prodesk_user');
         setUser(null)
     }
 
