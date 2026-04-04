@@ -22,70 +22,55 @@ export default function AgentTicketChatScreen() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    socketRef.current = io(BACKEND_URL, { transports: ['websocket'] });
+    if (!user?.token) return;
+
+    socketRef.current = io(BACKEND_URL, {
+      transports: ['websocket'],
+      auth: { token: user.token }
+    });
+
     const socket = socketRef.current;
 
     socket.on('connect', () => {
       socket.emit('entrarChat', { chatId: id });
+      socket.emit('buscarHistorico', { chatId: id });
+    });
+
+    socket.on('historicoChat', (data: { chatId: string, mensagens: any[] }) => {
+      const history = data.mensagens.map((msg) => {
+        const isMe = msg.senderId === user.id;
+        return {
+          id: msg._id || msg.id,
+          text: msg.content,
+          sender: isMe ? 'USER' : 'AGENT', 
+          agentName: isMe ? undefined : 'Cliente',
+          time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        } as MessageType;
+      });
+      setMessages(history);
+      setIsLoadingHistory(false);
     });
 
     socket.on('novaMensagem', (msg: any) => {
-      const isMe = msg.senderId === user?.id;
-      
-      const incomingMsg: MessageType = {
-        id: msg._id,
+      const isMe = msg.senderId === user.id;
+      setMessages((prev) => [...prev, {
+        id: msg._id || msg.id,
         text: msg.content,
         sender: isMe ? 'USER' : 'AGENT',
-        agentName: isMe ? undefined : 'Cliente', 
-        time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, incomingMsg]);
+        agentName: isMe ? undefined : 'Cliente',
+        time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      } as MessageType]); 
     });
-
-    const fetchHistory = async () => {
-      setIsLoadingHistory(true);
-      try {
-        const response = await fetch(`${BACKEND_URL}/ProDeskApi/messages/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          const formattedMessages: MessageType[] = data.map((msg: any) => {
-            const isMe = msg.senderId === user?.id;
-            return {
-              id: msg._id,
-              text: msg.content,
-              sender: isMe ? 'USER' : 'AGENT',
-              agentName: isMe ? undefined : 'Cliente',
-              time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-            };
-          });
-          setMessages(formattedMessages);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar histórico:", error);
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    };
-
-    fetchHistory();
 
     return () => {
       socket.emit('sairChat', { chatId: id });
       socket.disconnect();
     };
-  }, [id, user?.id]);
+  }, [id, user]);
 
   const handleSendMessage = () => {
-    if (!inputText.trim() || !user?.id) return;
-
-    const payload = {
-      chatId: id,
-      senderId: user.id, // ID do Atendente enviando
-      content: inputText.trim(),
-      isSystemMessage: false,
-    };
-
-    socketRef.current?.emit('enviarMensagem', payload);
+    if (!inputText.trim()) return;
+    socketRef.current?.emit('enviarMensagem', { chatId: id, content: inputText.trim() });
     setInputText('');
   };
 

@@ -5,8 +5,9 @@ export type UserRole = 'cliente' | 'atendente' | 'admin'
 export type User = {
     id: string,
     name: string,
-    email: string
-    role: UserRole
+    email: string,
+    role: UserRole,
+    token: string
 }
 
 type AuthContextData = {
@@ -34,11 +35,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
         setIsLoading(true)
 
         setTimeout(() => {
+            const userId = role === 'cliente' 
+              ? '507f1f77bcf86cd799439022' 
+              : '507f1f77bcf86cd799439033'; 
             setUser({
-                id: '123',
-                name: 'Joao Silva',
-                email: 'teste@email.com',
-                role: role
+                id: userId,     
+                name: role === 'cliente' ? 'Cliente Teste' : 'Atendente Teste',
+                email: `${role}@teste.com`,
+                role: role,
+                token: `TEST_TOKEN_${role.toUpperCase()}` 
             })
             setIsLoading(false)
         }, 1000)

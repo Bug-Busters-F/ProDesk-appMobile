@@ -23,7 +23,7 @@ function InitialLayout () {
         if (user.role === 'cliente') {
           router.replace('/(client)/(tabs)/clientHome')
         }  else if (user.role === 'atendente') {
-          router.replace('/(agent)/agentHome')
+          router.replace('/(agent)/(tabs)/agentHome')
         }  else if (user.role === 'admin') {
           router.replace('/(admin)/adminHome')
         }

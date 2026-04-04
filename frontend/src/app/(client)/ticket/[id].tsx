@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, FlatList, 
-  KeyboardAvoidingView, Platform, ActivityIndicator 
+  KeyboardAvoidingView, Platform, ActivityIndicator, 
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -10,93 +11,121 @@ import { io, Socket } from 'socket.io-client';
 import { MessageBubble, MessageType } from '../../../components/chat/MessageBubble';
 import { useAuth } from '@/contexts/AuthContext';
 
-const BACKEND_URL = 'http://10.0.2.2:3000';
+const BACKEND_URL = 'http://10.0.2.2:3000'; // O socket vai usar essa base limpa
+
+// Na função setupChatRoom(), adicione o prefixo ProDeskApi na requisição HTTP:
+
 
 export default function TicketChatScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams(); // Esse é o chatId
-  const { user } = useAuth(); // Pegamos o cliente logado para ser o senderId
+  
+  const { id: routeId, initialMessage, isNewTicket } = useLocalSearchParams();
+  const { user } = useAuth();
   
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   
+  const [realChatId, setRealChatId] = useState<string | null>(null);
+  
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
+  const hasSentInitialMessage = useRef(false);
 
   useEffect(() => {
-    // 1. Inicializa a conexão com o Gateway do NestJS
+    const setupChatRoom = async () => {
+      
+      try {
+        let finalChatId = null;
+
+        if (isNewTicket === 'true') {
+            const chatResponse = await fetch(`${BACKEND_URL}/ProDeskApi/chat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ticketId: routeId,
+                clientId: user?.id,
+                agentId: '507f1f77bcf86cd799439033', 
+                groupId: '507f1f77bcf86cd799439034', 
+              })
+            });
+           
+           if (!chatResponse.ok) {
+             Alert.alert('Erro', 'Não foi possível criar a sala de chat.');
+             return;
+           }
+           
+           const chatData = await chatResponse.json();
+           finalChatId = chatData.id || chatData._id;
+        } else {
+           finalChatId = routeId as string;
+        }
+
+        if (finalChatId) {
+           setRealChatId(finalChatId);
+        }
+      } catch (error) {
+        console.error('Erro ao configurar sala de chat:', error);
+      }
+    };
+
+    if (user?.id && routeId) {
+      setupChatRoom();
+    }
+  }, [routeId, isNewTicket, user?.id]);
+
+  useEffect(() => {
+    if (!user?.token || !realChatId) return;
+
     socketRef.current = io(BACKEND_URL, {
       transports: ['websocket'],
+      auth: { token: user.token } 
     });
 
     const socket = socketRef.current;
 
     socket.on('connect', () => {
-      console.log('Conectado ao Socket do Backend!');
-      socket.emit('entrarChat', { chatId: id });
+      socket.emit('entrarChat', { chatId: realChatId });
+      socket.emit('buscarHistorico', { chatId: realChatId });
+
+      if (initialMessage && !hasSentInitialMessage.current) {
+        hasSentInitialMessage.current = true;
+        socket.emit('enviarMensagem', { chatId: realChatId, content: initialMessage });
+      }
+    });
+
+    socket.on('historicoChat', (data: { chatId: string, mensagens: any[] }) => {
+      const history = data.mensagens.map((msg) => ({
+        id: msg._id || msg.id,
+        text: msg.content,
+        sender: msg.senderId === user.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
+        time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      } as MessageType)); 
+      
+      setMessages(history);
+      setIsLoadingHistory(false);
     });
 
     socket.on('novaMensagem', (msg: any) => {
-      const incomingMsg: MessageType = {
-        id: msg._id,
+      setMessages((prev) => [...prev, {
+        id: msg._id || msg.id,
         text: msg.content,
-        sender: msg.senderId === user?.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
-        agentName: msg.isSystemMessage ? 'Assistente Virtual' : 'Especialista',
-        time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, incomingMsg]);
+        sender: msg.senderId === user.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
+        time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      } as MessageType]);
     });
 
-    // 2. BUSCAR O HISTÓRICO REAL NA API
-    const fetchHistory = async () => {
-      setIsLoadingHistory(true);
-      try {
-        // Substitua pelo IP da sua máquina se estiver a testar num telemóvel físico
-        const response = await fetch(`${BACKEND_URL}/ProDeskApi/messages/${id}`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Mapear os dados da base de dados para o formato visual do chat
-          const formattedMessages: MessageType[] = data.map((msg: any) => ({
-            id: msg._id,
-            text: msg.content,
-            sender: msg.senderId === user?.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
-            agentName: msg.isSystemMessage ? 'Assistente Virtual' : 'Especialista',
-            time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          }));
-
-          setMessages(formattedMessages);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar histórico:", error);
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    };
-
-    fetchHistory();
+    socket.on('erro', (err) => console.log('Erro Socket:', err));
 
     return () => {
-      socket.emit('sairChat', { chatId: id });
+      socket.emit('sairChat', { chatId: realChatId });
       socket.disconnect();
     };
-  }, [id, user?.id]);
+  }, [realChatId, user, initialMessage]);
 
   const handleSendMessage = () => {
-    if (!inputText.trim() || !user?.id) return;
-
-    // Em vez de atualizar a tela direto, enviamos para o backend. 
-    // O backend vai salvar e emitir 'novaMensagem' de volta para a gente!
-    const payload = {
-      chatId: id,
-      senderId: user.id,
-      content: inputText.trim(),
-      isSystemMessage: false, // É uma mensagem de humano
-    };
-
-    socketRef.current?.emit('enviarMensagem', payload);
+    if (!inputText.trim() || !realChatId) return; // Alterado para validar o realChatId
+    socketRef.current?.emit('enviarMensagem', { chatId: realChatId, content: inputText.trim() });
     setInputText('');
   };
 
@@ -111,7 +140,7 @@ export default function TicketChatScreen() {
           </TouchableOpacity>
           <View>
             <Text className="text-lg font-bold text-slate-800">
-              Protocolo #{typeof id === 'string' ? id.slice(-6).toUpperCase() : 'NOVO'}
+              Protocolo #{typeof routeId === 'string' ? routeId.slice(-6).toUpperCase() : 'NOVO'}
             </Text>
             <Text className="text-orange-500 font-bold text-xs">ONLINE AGORA</Text>
           </View>

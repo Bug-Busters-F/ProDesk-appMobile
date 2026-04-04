@@ -1,30 +1,72 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { AgentTicketCard, AgentTicketData } from '@/components/tickets/AgentTicketCard';
-import { useAuth } from '@/contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import { AgentTicketCard, AgentTicketStatus } from '@/components/tickets/AgentTicketCard';
 
-const MOCK_TICKETS: AgentTicketData[] = [
-  { id: '12345', clientName: 'João Silva', category: 'INTERNET / SUPORTE', timeAgo: '15 min atrás', description: 'Problema de Conexão Wi-Fi intermitente no setor de vendas', status: 'PENDENTE' },
-  { id: '12346', clientName: 'Maria Oliveira', category: 'SISTEMAS INTERNOS', timeAgo: '32 min atrás', description: 'Erro ao acessar o portal corporativo (Erro 403)', status: 'EM ATENDIMENTO' },
-  { id: '12347', clientName: 'Carlos Souza', category: 'HARDWARE', timeAgo: '1h atrás', description: 'Troca de toner da impressora do RH solicitada', status: 'ESCALONADO' },
-];
+const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 
-export default function AgentHome() {
+export default function AgentTickets() {
   const router = useRouter();
-  const { signOut } = useAuth();
+  
   const [activeFilter, setActiveFilter] = useState('Todos');
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchTickets = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/tickets`);
+      if (!response.ok) throw new Error('Falha ao buscar chamados');
+      
+      const data = await response.json();
+      setTickets(data);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Não foi possível carregar os chamados.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchTickets();
+  };
+
+  const mapStatusToUI = (backendStatus: string): AgentTicketStatus => {
+    switch(backendStatus) {
+      case 'OPEN': return 'PENDENTE';
+      case 'IN_PROGRESS': return 'EM ATENDIMENTO';
+      case 'ESCALATED': return 'ESCALONADO';
+      default: return 'PENDENTE';
+    }
+  };
+
+  const filteredTickets = tickets.filter(ticket => {
+    if (activeFilter === 'Todos') return true;
+    if (activeFilter === 'Pendentes') return ticket.status === 'OPEN';
+    if (activeFilter === 'Em atendimento') return ticket.status === 'IN_PROGRESS';
+    return true;
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-stone-50" edges={['top']}>
       <View className="px-6 pt-4 pb-2 flex-row justify-between items-center">
         <Text className="text-2xl font-bold text-slate-900">Chamados do Setor</Text>
       </View>
-      <ScrollView className="flex-1 px-6 pt-4" showsVerticalScrollIndicator={false}>
-        {/* FILTROS HORIZONTAIS */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
+      
+      <ScrollView 
+        className="flex-1 px-6 pt-4" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#f97316']} />
+        }
+      >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 h-10">
           {['Todos', 'Pendentes', 'Em atendimento'].map((filter) => {
             const isActive = activeFilter === filter;
             return (
@@ -41,17 +83,63 @@ export default function AgentHome() {
           })}
         </ScrollView>
 
-        {/* LISTA DE CHAMADOS */}
-        {MOCK_TICKETS.map(ticket => (
-          <AgentTicketCard 
-            key={ticket.id} 
-            ticket={ticket} 
-            onPress={() => router.push({
-              pathname: '/(agent)/ticket/[id]',
-              params: { id: ticket.id }
-            })}
-          />
-        ))}
+        {loading ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="large" color="#f97316" />
+            <Text className="text-slate-400 mt-4">Carregando chamados...</Text>
+          </View>
+        ) : (
+          filteredTickets.map(t => {
+            const ticketId = t.id || t._id;
+            const category = t.category || t.props?.category;
+            const description = t.description || t.props?.description;
+            const status = t.status || t.props?.status;
+            const createdAt = t.createdAt || t.props?.createdAt;
+
+            return (
+              <AgentTicketCard 
+                key={ticketId} 
+                ticket={{
+                  id: ticketId,
+                  clientName: 'Cliente', 
+                  category: category,
+                  timeAgo: new Date(createdAt).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                  description: description,
+                  status: mapStatusToUI(status)
+                }} 
+                onPress={async () => {
+                try {
+                  const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticketId}`);
+                  if (!res.ok) {
+                    Alert.alert('Aviso', 'O chat deste chamado ainda não foi criado.');
+                    return; 
+                  }
+
+                  const chatData = await res.json();
+                  const chatId = chatData?.id || chatData?._id;
+                  
+                  if (chatId) {
+                    router.push({
+                      pathname: '/(client)/ticket/[id]',
+                      params: { id: chatId }
+                    });
+                  } else {
+                    Alert.alert('Aviso', 'O chat deste chamado não possui ID válido.');
+                  }
+                } catch (e) {
+                  console.error(e);
+                  Alert.alert('Erro', 'Falha ao conectar na sala do chamado.');
+                }
+              }}
+              />
+            )
+          })
+        )}
+
+        {!loading && filteredTickets.length === 0 && (
+           <Text className="text-center text-slate-400 mt-10">Nenhum chamado encontrado nesta categoria.</Text>
+        )}
+
         <View className="h-10" />
       </ScrollView>
     </SafeAreaView>
