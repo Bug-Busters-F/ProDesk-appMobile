@@ -1,5 +1,5 @@
 import '../../global.css';
-import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
+import { useRouter, useSegments, usePathname, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 
@@ -21,8 +21,8 @@ function InitialLayout () {
     } else if (user && (inAuthGroup || isIndex)) {
         if (user.role === 'client') {
           router.replace('/(client)/(tabs)/clientHome')
-        }  else if (user.role === 'support') {
-          router.replace('/(agent)/agentHome')
+        }  else if (user.role === 'atendente') {
+          router.replace('/(agent)/(tabs)/agentHome')
         }  else if (user.role === 'admin') {
           router.replace('/(admin)/(tabs)/adminHome')
         }
@@ -31,7 +31,7 @@ function InitialLayout () {
 
   
 
-  return <Slot />
+  return <Stack screenOptions={{ headerShown: false }} />
 }
 
 export default function RootLayout() {
