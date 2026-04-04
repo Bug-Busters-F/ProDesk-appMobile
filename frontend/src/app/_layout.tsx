@@ -1,7 +1,6 @@
 import '../../global.css';
 import { useRouter, useSegments, usePathname, Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 
 function InitialLayout () {
@@ -20,23 +19,17 @@ function InitialLayout () {
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login')
     } else if (user && (inAuthGroup || isIndex)) {
-        if (user.role === 'cliente') {
+        if (user.role === 'client') {
           router.replace('/(client)/(tabs)/clientHome')
         }  else if (user.role === 'atendente') {
           router.replace('/(agent)/(tabs)/agentHome')
         }  else if (user.role === 'admin') {
-          router.replace('/(admin)/adminHome')
+          router.replace('/(admin)/(tabs)/adminHome')
         }
     }
   }, [user, isLoading, segments, pathname])
 
-  if (isLoading) {
-    return(
-      <View className='flex-1 justify-center items-center'>
-        <ActivityIndicator size="large" color="orange" />
-      </View>
-    )
-  }
+  
 
   return <Stack screenOptions={{ headerShown: false }} />
 }

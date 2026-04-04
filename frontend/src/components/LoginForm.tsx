@@ -1,8 +1,9 @@
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup'
-import { User } from "@/contexts/AuthContext";
+import * as yup from 'yup' 
+import { useAuth } from "@/contexts/AuthContext";
+import { router } from "expo-router";
 
 const loginValidationSchema = yup.object().shape({
         email: yup
@@ -20,8 +21,28 @@ export default function LoginForm () {
         mode: 'onSubmit'
     })
 
-    const handleLogin = (data: { email: string, password: string}) => {
-        console.log("Email e senha", data)
+    const { signIn } = useAuth()
+
+    const handleLogin = async (data: { email: string, password: string }) => {
+        try {
+            const role = await signIn(data.email, data.password)
+
+            switch(role) {
+                case 'admin':
+                router.replace('/(admin)/(tabs)/adminHome');
+                break;
+            case 'support':
+                router.replace('/(support)/supportHome'); 
+                break;
+            case 'client':
+                router.replace('/(client)/(tabs)/clientHome');
+                break;
+            default:
+                Alert.alert('Erro', 'Tipo de usuário não reconhecido.');
+            }
+        } catch (error) {
+            Alert.alert("Erro", "Email ou senha incorretos")
+        }
     }
 
     return (
@@ -36,7 +57,7 @@ export default function LoginForm () {
                     name="email"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16"
+                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
                             placeholder="Digite seu email"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -62,7 +83,7 @@ export default function LoginForm () {
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16"
+                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
                             placeholder="Digite sua senha"
                             onBlur={onBlur}
                             onChangeText={(text) => {
