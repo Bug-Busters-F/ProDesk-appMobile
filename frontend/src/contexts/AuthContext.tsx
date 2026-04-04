@@ -6,10 +6,11 @@ import { jwtDecode } from "jwt-decode"
 export type UserRole = 'client' | 'support' | 'admin'
 
 export type User = {
-    id: string
-    email: string,
-    password: string,
-    role: UserRole
+    id: string;
+    name?: string; 
+    email: string;
+    role: UserRole;
+    token: string; 
 }
 
 export type AuthContextData = {
@@ -50,9 +51,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
 
             const userData: User = {
                 id: decoded.sub,
+                name: decoded.name || 'Usuário', 
                 email: decoded.email,
-                password: '',
-                role: decoded.role.toLowerCase() as UserRole
+                role: decoded.role.toLowerCase() as UserRole,
+                token: token 
             }
 
             await SecureStore.setItemAsync('prodesk_token', token)

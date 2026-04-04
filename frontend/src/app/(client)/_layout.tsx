@@ -5,6 +5,7 @@ export default function ClientStackLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="newTicket" />
+      <Stack.Screen name="ticket/[id]" />
     </Stack>
   );
 }
