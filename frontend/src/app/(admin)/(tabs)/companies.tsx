@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router'; 
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import CompanyCard from '@/components/CompanyCard';
 import api from '@/services/api';
@@ -113,21 +113,26 @@ export default function Companies () {
                         onBlur={() => setFocused(false)}
                     />
                 </View>
-
-                <View className="flex-row items-center px-5 py-5 rounded-2xl mb-6 bg-[#F5E9DA] border border-[#E8D5C0]">
-                    <View className="size-14 rounded-full bg-[#F1DEC7] flex items-center justify-center mr-5">
-                        <MaterialIcons name="apartment" size={26} color="#F97316" />
+                {/* 
+                    
+                    <View className="flex-row items-center px-5 py-5 rounded-2xl mb-6 bg-[#F5E9DA] border border-[#E8D5C0]">
+                        <View className="size-14 rounded-full bg-[#F1DEC7] flex items-center justify-center mr-5">
+                            <MaterialIcons name="apartment" size={26} color="#F97316" />
+                        </View>
+                       
+                        <View>
+                            <Text className="text-xs font-semibold tracking-widest text-orange-900">
+                            TOTAL DE EMPRESAS
+                            </Text>
+    
+                            <Text className="text-3xl font-bold text-orange-900">
+                            42
+                            </Text>
+                        </View>
                     </View>
-                    <View>
-                        <Text className="text-xs font-semibold tracking-widest text-orange-900">
-                        TOTAL DE EMPRESAS
-                        </Text>
+                    
+                */}
 
-                        <Text className="text-3xl font-bold text-orange-900">
-                        42
-                        </Text>
-                    </View>
-                </View>
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#F97316" className='mt-10' />
