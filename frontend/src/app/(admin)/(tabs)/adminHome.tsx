@@ -124,19 +124,40 @@ export default function Home() {
               Status dos Chamados
             </Text>
 
-            <View className="flex-row justify-between items-center">
-              <View className="items-center justify-center">
-                <View className="w-24 h-24 rounded-full border-8 border-orange-400 items-center justify-center">
-                  <Text className="font-bold text-gray-800">100%</Text>
-                  <Text className="text-gray-400 text-xs">TOTAL</Text>
+            {/* Barra proporcional */}
+            <View className="h-3 w-full bg-gray-200 overflow-hidden flex-row mb-5">
+              <View className="w-[70%] bg-orange-400" />
+              <View className="w-[25%] bg-green-400" />
+              <View className="w-[5%] bg-red-400" />
+            </View>
+
+            {/* Legenda */}
+            <View className="space-y-2">
+              
+              <View className="flex-row justify-between items-center">
+                <View className="flex-row items-center">
+                  <View className="w-3 h-3 rounded-full bg-orange-400 mr-2" />
+                  <Text className="text-gray-600">Em Aberto</Text>
                 </View>
+                <Text className="font-semibold text-gray-800">70%</Text>
               </View>
 
-              <View>
-                <Text className="text-gray-600 mb-1">🟠 Em Aberto 70%</Text>
-                <Text className="text-gray-600 mb-1">🟢 Resolvidos 25%</Text>
-                <Text className="text-gray-600">🔴 Críticos 5%</Text>
+              <View className="flex-row justify-between items-center">
+                <View className="flex-row items-center">
+                  <View className="w-3 h-3 rounded-full bg-green-400 mr-2" />
+                  <Text className="text-gray-600">Resolvidos</Text>
+                </View>
+                <Text className="font-semibold text-gray-800">25%</Text>
               </View>
+
+              <View className="flex-row justify-between items-center">
+                <View className="flex-row items-center">
+                  <View className="w-3 h-3 rounded-full bg-red-400 mr-2" />
+                  <Text className="text-gray-600">Críticos</Text>
+                </View>
+                <Text className="font-semibold text-gray-800">5%</Text>
+              </View>
+
             </View>
           </View>
 
