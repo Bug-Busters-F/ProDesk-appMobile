@@ -20,6 +20,10 @@ export default function AdminTabsLayout () {
         name="groups" 
         options={{ title: 'Grupos', tabBarIcon: ({ color }) => <MaterialIcons name="support-agent" size={24} color={color} /> }}
       />
+      <Tabs.Screen 
+        name="profile" 
+        options={{ title: 'Perfil', tabBarIcon: ({ color }) => <FontAwesome name="user" size={24} color={color} /> }}
+      />
     </Tabs>
   );
 }

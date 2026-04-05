@@ -1,4 +1,4 @@
-import { Text, View, Image } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RegisterUserForm from "@/components/RegisterUserForm";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
