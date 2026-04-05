@@ -3,10 +3,13 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext'; 
+import { useTicketStore } from '@/stores/ticketStore';
 
 const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 
 export default function NewTicket() {
+  const {createNewTicket} = useTicketStore()
+ 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,53 +18,22 @@ export default function NewTicket() {
   const { user } = useAuth(); 
 
   const handleSendTicket = async () => {
-    if (!title.trim() || !description.trim()) {
-      Alert.alert("Campos Obrigatórios", "Por favor, preencha o título e a descrição antes de enviar.");
-      return;
+        if (!isFormValid) {
+            Alert.alert("Campos Obrigatórios", "Por favor, preencha o título e a descrição.")
+            return
+        }
+
+        try {
+            await createNewTicket({
+                title: title.trim(),
+                description: description.trim(),
+                clientId: user?.id
+            })
+            router.replace('/(client)/tickets')
+        } catch {
+            Alert.alert("Erro", "Não foi possível abrir o chamado.")
+        }
     }
-
-    setIsSubmitting(true);
-
-    try {
-      const triageResponse = await fetch(`${BACKEND_URL}/triage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: description.trim() })
-      });
-      const triageData = await triageResponse.json();
-      const category = triageData.value || 'OTHER';
-      const ticketResponse = await fetch(`${BACKEND_URL}/tickets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: title.trim(),
-          category: category,
-          description: description.trim(),
-          clientId: user?.id, 
-        })
-      });
-
-      if (!ticketResponse.ok) throw new Error("Falha ao criar ticket");
-      const ticketData = await ticketResponse.json();
-      const ticketId = ticketData.id || ticketData._id;
-
-      const initialMessage = `[ NOVA SOLICITAÇÃO ]\n\nTítulo: ${title.trim()}\nDescrição: ${description.trim()}`;
-
-      router.replace({
-        pathname: '/(client)/ticket/[id]',
-        params: { 
-          id: ticketId,
-          initialMessage: initialMessage, 
-          isNewTicket: 'true'
-        },
-      });
-
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível abrir o chamado. Verifique a sua conexão.");
-      setIsSubmitting(false);
-    }
-  };
 
   const isFormValid = title.trim().length > 0 && description.trim().length > 0;
 
@@ -116,7 +88,7 @@ export default function NewTicket() {
         </View>
 
         <TouchableOpacity 
-          onPress={handleSendTicket}
+          onPress={handleSendTicket} 
           disabled={!isFormValid || isSubmitting}
           className={`w-full h-16 rounded-2xl flex-row items-center justify-center shadow-lg mb-4 transition-colors ${
             isFormValid && !isSubmitting ? 'bg-orange-500 shadow-orange-300' : 'bg-slate-300 shadow-slate-200'

@@ -5,9 +5,6 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   TicketCard,
-  TicketData,
-  TicketPriority,
-  TicketStatus,
 } from '@/components/tickets/TicketCard';
 import { useTicketStore } from '@/stores/ticketStore';
 
