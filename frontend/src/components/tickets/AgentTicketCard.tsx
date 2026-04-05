@@ -5,6 +5,7 @@ export type AgentTicketStatus = 'PENDENTE' | 'EM ATENDIMENTO' | 'ESCALONADO';
 
 export type AgentTicketData = {
   id: string;
+  title: string;
   clientName: string;
   category: string;
   timeAgo: string;
@@ -36,7 +37,7 @@ export function AgentTicketCard({ ticket, onPress }: Props) {
       </View>
 
       <Text className="text-lg font-bold text-slate-800 mb-1">
-        #{ticket.id} - {ticket.clientName}
+        {ticket.title} - {ticket.clientName}
       </Text>
       <Text className="text-slate-500 text-sm mb-5" numberOfLines={2}>
         {ticket.description}

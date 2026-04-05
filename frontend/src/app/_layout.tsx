@@ -21,7 +21,7 @@ function InitialLayout () {
     } else if (user && (inAuthGroup || isIndex)) {
         if (user.role === 'client') {
           router.replace('/(client)/(tabs)/clientHome')
-        }  else if (user.role === 'atendente') {
+        }  else if (user.role === 'support') {
           router.replace('/(agent)/(tabs)/agentHome')
         }  else if (user.role === 'admin') {
           router.replace('/(admin)/(tabs)/adminHome')

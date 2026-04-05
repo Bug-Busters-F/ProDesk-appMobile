@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -9,58 +9,22 @@ import {
   TicketPriority,
   TicketStatus,
 } from '@/components/tickets/TicketCard';
+import { useTicketStore } from '@/stores/ticketStore';
 
 const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 
 export default function Tickets() {
   const router = useRouter();
   const { user } = useAuth();
+
+  const {tickets, loading, fetchTickets} = useTicketStore()
   
-  const [tickets, setTickets] = useState<TicketData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Todos');
 
-  const fetchTickets = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/tickets`);
-      
-      if (!response.ok) {
-        throw new Error('Falha ao buscar chamados');
-      }
-      const data = await response.json();
-
-      const myTickets = data.filter((t: any) => t.clientId === user?.id);
-
-      const formattedTickets: TicketData[] = myTickets.map((t: any) => ({
-        _id: t.id || t._id,
-        title: t.title || t.props?.title,
-        category: t.category || t.props?.category,
-        priority: (t.priority || t.props?.priority) as TicketPriority,
-        status: (t.status || t.props?.status) as TicketStatus,
-        description: t.description || t.props?.description,
-        createdAt: t.createdAt || t.props?.createdAt,
-        agentId: t.agentId || t.props?.agentId,
-        closedAt: t.closedAt || t.props?.closedAt,
-      }));
-
-      formattedTickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-      setTickets(formattedTickets);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível carregar os seus chamados.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchTickets();
-    }, [user?.id])
-  );
+  useEffect(() => {
+    fetchTickets
+  }, [])
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -124,11 +88,11 @@ export default function Tickets() {
         ) : (
           filteredTickets.map(ticket => (
             <TicketCard
-              key={ticket._id}
+              key={ticket.id}
               ticket={ticket}
               onPress={async () => {
                 try {
-                  const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticket._id}`); 
+                  const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticket.id}`); 
                   const chatData = await res.json();
                   const chatId = chatData?.id || chatData?._id;
                   

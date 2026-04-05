@@ -3,35 +3,22 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Ref
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AgentTicketCard, AgentTicketStatus } from '@/components/tickets/AgentTicketCard';
+import { useTicketStore } from '@/stores/ticketStore';
 
 const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 
 export default function AgentTickets() {
   const router = useRouter();
   
+  const {tickets, loading, selectedTicket, fetchTickets, fetchTicketById} = useTicketStore()
+
   const [activeFilter, setActiveFilter] = useState('Todos');
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchTickets = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/tickets`);
-      if (!response.ok) throw new Error('Falha ao buscar chamados');
-      
-      const data = await response.json();
-      setTickets(data);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível carregar os chamados.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
   useEffect(() => {
     fetchTickets();
   }, []);
+  
   const onRefresh = () => {
     setRefreshing(true);
     fetchTickets();
@@ -90,23 +77,26 @@ export default function AgentTickets() {
           </View>
         ) : (
           filteredTickets.map(t => {
-            const ticketId = t.id || t._id;
-            const category = t.category || t.props?.category;
-            const description = t.description || t.props?.description;
-            const status = t.status || t.props?.status;
-            const createdAt = t.createdAt || t.props?.createdAt;
+            const ticketId = t.id;
+            const ticketTitle = t.title;
+            const category = t.category;
+            const description = t.description;
+            const status = t.status;
+            const createdAt = t.createdAt;
 
             return (
               <AgentTicketCard 
                 key={ticketId} 
                 ticket={{
                   id: ticketId,
+                  title: ticketTitle,
                   clientName: 'Cliente', 
                   category: category,
                   timeAgo: new Date(createdAt).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                   description: description,
                   status: mapStatusToUI(status)
                 }} 
+                // onPress={fetchTicketById(ticketId)}
                 onPress={async () => {
                 try {
                   const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticketId}`);

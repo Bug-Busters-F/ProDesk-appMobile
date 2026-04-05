@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ticket } from '@/types/ticket';
 
 export enum TicketStatus {
   OPEN = 'OPEN',
@@ -29,7 +30,7 @@ export type TicketData = {
 };
 
 type Props = {
-  ticket: TicketData;
+  ticket: Ticket;
   onPress?: () => void;
 };
 
@@ -67,7 +68,7 @@ const formatDate = (dateInput: string | Date) => {
 
 export function TicketCard({ ticket, onPress }: Props) {
   const styleConfig = STATUS_MAP[ticket.status] || STATUS_MAP[TicketStatus.OPEN];
-  const shortId = `#${ticket._id.substring(ticket._id.length - 6).toUpperCase()}`;
+  const shortId = `#${ticket.id.substring(ticket.id.length - 6).toUpperCase()}`;
 
   return (
     <TouchableOpacity
@@ -89,7 +90,6 @@ export function TicketCard({ ticket, onPress }: Props) {
       </Text>
 
       <View className="flex-row items-center justify-between border-t border-slate-50 pt-4">
-        
         <View className="flex-row items-center">
           <Ionicons name="calendar-outline" size={14} color="#94a3b8" />
           <Text className="text-slate-400 text-xs ml-1 capitalize">
