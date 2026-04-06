@@ -5,7 +5,6 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import GroupCard from '@/components/GroupCard';
 import api from '@/services/api';
-import UserCard from '@/components/UserCard';
 
 interface Group {
     id: string

@@ -37,7 +37,7 @@ export default function Tickets() {
   });
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-stone-50">
       <ScrollView 
         className="flex-1 pt-12 px-6" 
         showsVerticalScrollIndicator={false}
