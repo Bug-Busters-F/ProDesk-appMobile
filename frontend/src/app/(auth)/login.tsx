@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
-import LoginForm from '@/components/LoginForm';
+import LoginForm from '@/components/auth/LoginForm';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Login() {

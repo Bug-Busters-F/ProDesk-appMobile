@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
-import GroupCard from '@/components/GroupCard';
+import GroupCard from '@/components/group/GroupCard';
 import api from '@/services/api';
 
 interface Group {

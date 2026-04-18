@@ -1,7 +1,7 @@
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import RegisterGroupForm from "@/components/RegisterGroupForm";
+import RegisterGroupForm from "@/components/group/RegisterGroupForm";
 
 export default function RegisterGroup () {
     return(

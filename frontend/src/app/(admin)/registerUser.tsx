@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import RegisterUserForm from "@/components/RegisterUserForm";
+import RegisterUserForm from "@/components/user/RegisterUserForm";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 export default function RegisterUser () {
