@@ -78,7 +78,7 @@ export default function Companies () {
     }
 
     return (
-        <SafeAreaView className="flex-1 px-4 bg-stone-50 ">
+        <SafeAreaView className="flex-1 px-4 bg-stone-50 mt-6">
             <ScrollView>
                 <View className="flex-row items-center justify-between mb-6">
                     <View>

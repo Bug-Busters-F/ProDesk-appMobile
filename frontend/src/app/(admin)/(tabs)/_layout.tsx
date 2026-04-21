@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { FontAwesome, MaterialIcons, Feather } from '@expo/vector-icons'; 
+import { FontAwesome, MaterialIcons, Feather, MaterialCommunityIcons } from '@expo/vector-icons'; 
 
 export default function AdminTabsLayout () {
     return (
@@ -10,11 +10,11 @@ export default function AdminTabsLayout () {
       />
       <Tabs.Screen 
         name="users" 
-        options={{ title: 'Usuáriios', tabBarIcon: ({ color }) => <Feather name="users" size={24} color={color} /> }}
+        options={{ title: 'Usuários', tabBarIcon: ({ color }) => <Feather name="users" size={24} color={color} /> }}
       />
       <Tabs.Screen 
         name="companies" 
-        options={{ title: 'Empresas', tabBarIcon: ({ color }) => <FontAwesome name="building-o" size={24} color={color} /> }}
+        options={{ title: 'Empresas', tabBarIcon: ({ color }) => <MaterialCommunityIcons name="office-building-marker-outline" size={26} color={color} /> }}
       />
       <Tabs.Screen 
         name="groups" 
