@@ -8,7 +8,7 @@ type Props = {
     onDelete?: () => void
 }
 
-export default function GroupCard ({
+export default function CategoryCard ({
     name,
     description,
     onEdit,

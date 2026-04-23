@@ -8,36 +8,32 @@ import { useRouter } from "expo-router";
 import api from "@/services/api";
 import { Feather } from '@expo/vector-icons';
 
-// Interface para ajudar o TypeScript a entender o formato dos dados
 interface CategoryFormData {
     name: string;
     keywords: string[];
     trainingPhrases: string[];
 }
 
-const groupRegisterValidationSchema = yup.object().shape({
+const categoryRegisterValidationSchema = yup.object().shape({
     name: yup.string().required('O nome é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres'),
     keywords: yup.array().of(yup.string().required()).min(1, 'Adicione pelo menos uma palavra-chave'),
     trainingPhrases: yup.array().of(yup.string().required()).min(1, 'Adicione pelo menos uma frase de treinamento')
 });
 
-export default function RegisterGroupForm() {
+export default function RegisterCategoryForm() {
     const router = useRouter();
     
     const { control, handleSubmit, setValue, watch, clearErrors, formState: { errors } } = useForm<CategoryFormData>({
-        resolver: yupResolver(groupRegisterValidationSchema) as any,
+        resolver: yupResolver(categoryRegisterValidationSchema) as any,
         defaultValues: { name: '', keywords: [], trainingPhrases: [] },
         mode: 'onSubmit'
     });
 
     const [keywordInput, setKeywordInput] = useState('');
     const [phraseInput, setPhraseInput] = useState('');
-
-    // RESOLUÇÃO DO ERRO TYPESCRIPT: Adicionado fallback "|| []" para garantir que nunca será undefined
     const keywords = watch('keywords') || [];
     const trainingPhrases = watch('trainingPhrases') || [];
 
-    // Lógica para adicionar e remover Palavras-chave
     const addKeyword = () => {
         if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
             setValue('keywords', [...keywords, keywordInput.trim()]);
@@ -50,7 +46,6 @@ export default function RegisterGroupForm() {
         setValue('keywords', keywords.filter(kw => kw !== kwToRemove));
     };
 
-    // Lógica para adicionar e remover Frases de Treinamento
     const addPhrase = () => {
         if (phraseInput.trim() && !trainingPhrases.includes(phraseInput.trim())) {
             setValue('trainingPhrases', [...trainingPhrases, phraseInput.trim()]);
@@ -66,10 +61,10 @@ export default function RegisterGroupForm() {
     const handleRegister = async (data: CategoryFormData) => {
         try {
             const response = await api.post('/category', data);
-            console.log("GRUPO CADASTRADO: ", response.data);
-            router.replace('/(admin)/(tabs)/groups');
+            console.log("CATEGORIA CADASTRADA: ", response.data);
+            router.replace('/(admin)/(tabs)/categories');
         } catch (error: any) {
-            Alert.alert("Erro", "Não foi possível cadastrar o grupo.");
+            Alert.alert("Erro", "Não foi possível cadastrar a categoria.");
         }
     };
 
@@ -86,7 +81,7 @@ export default function RegisterGroupForm() {
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
                             className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
-                            placeholder="Digite o nome do grupo/categoria"
+                            placeholder="Digite o nome da categoria"
                             onBlur={onBlur}
                             onChangeText={(text) => {
                                 onChange(text);
@@ -176,14 +171,14 @@ export default function RegisterGroupForm() {
                 style={{ elevation: 5, shadowColor: '#f97316', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 }}
             >
                 <Text className="text-md text-white font-bold">
-                    Cadastrar Grupo
+                    Cadastrar Categoria
                 </Text>
             </TouchableOpacity>
 
             {/* Botão Cancelar */}
             <TouchableOpacity 
                 className="items-center py-5 bg-white border border-gray-300 rounded-lg mb-12" 
-                onPress={() => router.push('/(admin)/(tabs)/groups')}
+                onPress={() => router.push('/(admin)/(tabs)/categories')}
             >
                 <Text className="text-md text-gray-600 font-bold">
                     Cancelar

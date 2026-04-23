@@ -17,8 +17,8 @@ export default function AdminTabsLayout () {
         options={{ title: 'Empresas', tabBarIcon: ({ color }) => <MaterialCommunityIcons name="office-building-marker-outline" size={26} color={color} /> }}
       />
       <Tabs.Screen 
-        name="groups" 
-        options={{ title: 'Grupos', tabBarIcon: ({ color }) => <MaterialIcons name="support-agent" size={24} color={color} /> }}
+        name="categories" 
+        options={{ title: 'Categorias', tabBarIcon: ({ color }) => <MaterialIcons name="support-agent" size={24} color={color} /> }}
       />
       <Tabs.Screen 
         name="profile" 

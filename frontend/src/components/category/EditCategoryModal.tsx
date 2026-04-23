@@ -35,12 +35,11 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
 
     const [keywordInput, setKeywordInput] = useState('');
     const [phraseInput, setPhraseInput] = useState('');
-
     const keywords = watch('keywords') || [];
     const trainingPhrases = watch('trainingPhrases') || [];
 
     useEffect(() => {
-        if (category) {
+        if (category && visible) { 
             reset({
                 name: category.name,
                 keywords: category.keywords || [],
@@ -48,8 +47,23 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
             });
             setKeywordInput('');
             setPhraseInput('');
+            clearErrors(); 
         }
-    }, [category, reset]);
+    }, [category, visible, reset, clearErrors]);
+
+    const handleCancel = () => {
+        if (category) {
+            reset({
+                name: category.name,
+                keywords: category.keywords || [],
+                trainingPhrases: category.trainingPhrases || []
+            });
+        }
+        setKeywordInput('');
+        setPhraseInput('');
+        clearErrors();
+        onClose();
+    };
 
     const addKeyword = () => {
         if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
@@ -97,7 +111,8 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
     return (
         <Modal visible={visible} animationType="slide" transparent={true} statusBarTranslucent={true}>
             <View className="flex-1 justify-end bg-black/50">
-                <TouchableOpacity className="flex-1" onPress={onClose} />
+                {/* Alterado onPress para handleCancel */}
+                <TouchableOpacity className="flex-1" onPress={handleCancel} />
                 
                 <View className="bg-white rounded-t-3xl p-6 h-[85%]">
                     <Text className="text-xl font-bold mb-4">Editar Categoria</Text>
@@ -160,7 +175,8 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
                             {isSubmitting ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold">Salvar Alterações</Text>}
                         </TouchableOpacity>
 
-                        <TouchableOpacity className="bg-white border border-gray-300 py-4 rounded-xl items-center mb-10" onPress={onClose}>
+                        {/* Alterado onPress para handleCancel */}
+                        <TouchableOpacity className="bg-white border border-gray-300 py-4 rounded-xl items-center mb-10" onPress={handleCancel}>
                             <Text className="text-gray-600 font-bold">Cancelar</Text>
                         </TouchableOpacity>
 

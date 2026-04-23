@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, StatusBar } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import api from '@/services/api';
-import { Pressable } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const updateCompanySchema = yup.object().shape({
     name: yup.string().required('O nome completo é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres'),
@@ -28,16 +28,29 @@ export default function EditCompanyModal({ visible, company, onClose, onSuccess 
     const { control, handleSubmit, reset, clearErrors, formState: { errors, isSubmitting } } = useForm({
         resolver: yupResolver(updateCompanySchema),
         mode: 'onSubmit',
+        defaultValues: { name: '', cnpj: '' }
     });
 
     useEffect(() => {
+        if (company && visible) {
+            reset({
+                name: company.name,
+                cnpj: company.cnpj
+            });
+            clearErrors();
+        }
+    }, [company, visible, reset, clearErrors]);
+
+    const handleCancel = () => {
         if (company) {
             reset({
                 name: company.name,
                 cnpj: company.cnpj
             });
         }
-    }, [company, reset]);
+        clearErrors();
+        onClose();
+    };
 
     const handleUpdate = async (data: { name: string, cnpj: string }) => {
         if (!company) return;
@@ -71,85 +84,83 @@ export default function EditCompanyModal({ visible, company, onClose, onSuccess 
     };
 
     return (
-       <Modal
+        <Modal
             visible={visible}
-            animationType="fade"
-            transparent
-            statusBarTranslucent={true} 
-            navigationBarTranslucent={true}
-            onRequestClose={onClose}
-            >
-
-            <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-
-            <View className="absolute inset-0 bg-black/50 justify-center items-center">
+            animationType="slide"
+            transparent={true}
+            statusBarTranslucent={true}
+        >
+            <View className="flex-1 justify-end bg-black/50">
                 
-                <Pressable
-                    className="absolute inset-0"
-                    onPress={onClose}
-                />
+                <TouchableOpacity className="flex-1" onPress={handleCancel} />
                 
-                {/* Container do Formulário */}
-                <View className="bg-white rounded-2xl p-6 shadow-xl w-[90%] max-w-md">
-                    <Text className="text-xl font-bold text-slate-900 mb-6">
-                        Editar Empresa
-                    </Text>
+                <View className="bg-white rounded-t-3xl p-6 h-[70%]">
+                    <Text className="text-xl font-bold mb-4 text-slate-900">Editar Empresa</Text>
+                    
+                    <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
+                        
+                        {/* CAMPO NOME */}
+                        <View className="mb-4">
+                            <Text className="text-xs text-gray-500 mb-1">Nome</Text>
+                            <Controller
+                                control={control}
+                                name="name"
+                                render={({ field: { onChange, onBlur, value } }) => (
+                                    <TextInput
+                                        className="border border-gray-300 rounded-lg py-3 px-3 focus:border-orange-500"
+                                        placeholder="Nome da empresa"
+                                        onBlur={onBlur}
+                                        onChangeText={(text) => { onChange(text); clearErrors("name"); }}
+                                        value={value}
+                                    />
+                                )}
+                            />
+                            {errors.name && <Text className="text-xs text-red-500 mt-1">{errors.name.message as string}</Text>}
+                        </View>
 
-                    <View className="mb-5">
-                        <Text className="mb-1 text-slate-700">Nome</Text>
-                        <Controller
-                            control={control}
-                            name="name"
-                            render={({ field: { onChange, onBlur, value } }) => (
-                                <TextInput
-                                    className="border border-gray-300 rounded-lg px-3 h-14 focus:border-orange-500 bg-gray-50"
-                                    placeholder="Nome da empresa"
-                                    onBlur={onBlur}
-                                    onChangeText={(text) => { onChange(text); clearErrors("name"); }}
-                                    value={value}
-                                />
+                        {/* CAMPO CNPJ */}
+                        <View className="mb-8">
+                            <Text className="text-xs text-gray-500 mb-1">CNPJ</Text>
+                            <Controller
+                                control={control}
+                                name="cnpj"
+                                render={({ field: { onChange, onBlur, value } }) => (
+                                    <TextInput
+                                        className="border border-gray-300 rounded-lg py-3 px-3 focus:border-orange-500"
+                                        placeholder="Apenas números"
+                                        keyboardType="numeric"
+                                        onBlur={onBlur}
+                                        onChangeText={(text) => { onChange(text); clearErrors("cnpj"); }}
+                                        value={value}
+                                    />
+                                )}
+                            />
+                            {errors.cnpj && <Text className="text-xs text-red-500 mt-1">{errors.cnpj.message as string}</Text>}
+                        </View>
+
+                        {/* BOTÃO SALVAR */}
+                        <TouchableOpacity
+                            className="bg-orange-500 py-4 rounded-xl items-center mb-3"
+                            onPress={handleSubmit(handleUpdate)}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text className="text-white font-bold">Salvar Alterações</Text>
                             )}
-                        />
-                        {errors.name && <Text className="text-xs text-red-500 mt-1">{errors.name.message}</Text>}
-                    </View>
+                        </TouchableOpacity>
 
-                    <View className="mb-8">
-                        <Text className="mb-1 text-slate-700">CNPJ</Text>
-                        <Controller
-                            control={control}
-                            name="cnpj"
-                            render={({ field: { onChange, onBlur, value } }) => (
-                                <TextInput
-                                    className="border border-gray-300 rounded-lg px-3 h-14 focus:border-orange-500 bg-gray-50"
-                                    placeholder="Apenas números"
-                                    keyboardType="numeric"
-                                    onBlur={onBlur}
-                                    onChangeText={(text) => { onChange(text); clearErrors("cnpj"); }}
-                                    value={value}
-                                />
-                            )}
-                        />
-                        {errors.cnpj && <Text className="text-xs text-red-500 mt-1">{errors.cnpj.message}</Text>}
-                    </View>
-
-                    <TouchableOpacity
-                        className="items-center py-4 bg-orange-500 rounded-xl mb-3 flex-row justify-center"
-                        onPress={handleSubmit(handleUpdate)}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text className="text-md text-white font-bold">Salvar Alterações</Text>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        className="items-center py-4 bg-gray-100 rounded-xl"
-                        onPress={onClose}
-                    >
-                        <Text className="text-md text-slate-600 font-bold">Cancelar</Text>
-                    </TouchableOpacity>
+                        {/* BOTÃO CANCELAR */}
+                        <TouchableOpacity
+                            className="bg-white border border-gray-300 py-4 rounded-xl items-center mb-10"
+                            onPress={handleCancel}
+                            disabled={isSubmitting}
+                        >
+                            <Text className="text-gray-600 font-bold">Cancelar</Text>
+                        </TouchableOpacity>
+                        
+                    </KeyboardAwareScrollView>
                 </View>
             </View>
         </Modal>
