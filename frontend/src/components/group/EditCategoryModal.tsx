@@ -9,8 +9,8 @@ import { Feather } from '@expo/vector-icons';
 
 const updateCategorySchema = yup.object().shape({
     name: yup.string().required('O nome é obrigatório'),
-    keywords: yup.array().of(yup.string().required()).min(1),
-    trainingPhrases: yup.array().of(yup.string().required()).min(1)
+    keywords: yup.array().of(yup.string().required()), 
+    trainingPhrases: yup.array().of(yup.string().required())
 });
 
 type Category = {
@@ -28,7 +28,7 @@ type Props = {
 };
 
 export default function EditCategoryModal({ visible, category, onClose, onSuccess }: Props) {
-    const { control, handleSubmit, reset, setValue, watch, formState: { isSubmitting } } = useForm({
+    const { control, handleSubmit, reset, setValue, watch, setError, clearErrors, formState: { errors, isSubmitting } } = useForm({
         resolver: yupResolver(updateCategorySchema),
         defaultValues: { name: '', keywords: [], trainingPhrases: [] }
     });
@@ -55,6 +55,7 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
         if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
             setValue('keywords', [...keywords, keywordInput.trim()]);
             setKeywordInput('');
+            clearErrors('keywords'); 
         }
     };
 
@@ -62,11 +63,27 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
         if (phraseInput.trim() && !trainingPhrases.includes(phraseInput.trim())) {
             setValue('trainingPhrases', [...trainingPhrases, phraseInput.trim()]);
             setPhraseInput('');
+            clearErrors('trainingPhrases'); 
         }
     };
 
     const handleUpdate = async (data: any) => {
         if (!category) return;
+
+        let hasError = false;
+
+        if (!data.keywords || data.keywords.length === 0) {
+            setError('keywords', { type: 'manual', message: 'É obrigatório adicionar pelo menos uma keyword.' });
+            hasError = true;
+        }
+
+        if (!data.trainingPhrases || data.trainingPhrases.length === 0) {
+            setError('trainingPhrases', { type: 'manual', message: 'É obrigatório adicionar pelo menos uma frase de treinamento.' });
+            hasError = true;
+        }
+
+        if (hasError) return; 
+
         try {
             await api.patch(`/category/${category.id}`, data);
             onSuccess({ ...category, ...data });
@@ -91,6 +108,7 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
                             <View className="mb-4">
                                 <Text className="text-xs text-gray-500 mb-1">Nome</Text>
                                 <TextInput className="border border-gray-300 rounded-lg py-3 px-3" value={value} onChangeText={onChange} />
+                                {errors.name && <Text className="text-xs text-red-500 mt-1">{errors.name.message as string}</Text>}
                             </View>
                         )} />
 
@@ -107,12 +125,13 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
                                 {keywords.map((kw, i) => (
                                     <View key={i} className="flex-row bg-gray-200 px-3 py-1 rounded-full items-center">
                                         <Text className="text-xs mr-2">{kw}</Text>
-                                        <TouchableOpacity onPress={() => setValue('keywords', keywords.filter(k => k !== kw))}>
+                                        <TouchableOpacity onPress={() => setValue('keywords', keywords.filter((k: string) => k !== kw))}>
                                             <Feather name="x" size={12} color="red" />
                                         </TouchableOpacity>
                                     </View>
                                 ))}
                             </View>
+                            {errors.keywords && <Text className="text-xs text-red-500 mt-2">{errors.keywords.message as string}</Text>}
                         </View>
 
                         {/* FRASES */}
@@ -128,17 +147,23 @@ export default function EditCategoryModal({ visible, category, onClose, onSucces
                                 {trainingPhrases.map((phrase, i) => (
                                     <View key={i} className="flex-row bg-gray-50 border border-gray-200 p-2 rounded items-center justify-between">
                                         <Text className="text-xs flex-1">{phrase}</Text>
-                                        <TouchableOpacity onPress={() => setValue('trainingPhrases', trainingPhrases.filter(p => p !== phrase))}>
+                                        <TouchableOpacity onPress={() => setValue('trainingPhrases', trainingPhrases.filter((p: string) => p !== phrase))}>
                                             <Feather name="trash" size={14} color="red" />
                                         </TouchableOpacity>
                                     </View>
                                 ))}
                             </View>
+                            {errors.trainingPhrases && <Text className="text-xs text-red-500 mt-2">{errors.trainingPhrases.message as string}</Text>}
                         </View>
 
-                        <TouchableOpacity className="bg-orange-500 py-4 rounded-xl items-center mb-10" onPress={handleSubmit(handleUpdate)}>
+                        <TouchableOpacity className="bg-orange-500 py-4 rounded-xl items-center mb-3" onPress={handleSubmit(handleUpdate)}>
                             {isSubmitting ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold">Salvar Alterações</Text>}
                         </TouchableOpacity>
+
+                        <TouchableOpacity className="bg-white border border-gray-300 py-4 rounded-xl items-center mb-10" onPress={onClose}>
+                            <Text className="text-gray-600 font-bold">Cancelar</Text>
+                        </TouchableOpacity>
+
                     </KeyboardAwareScrollView>
                 </View>
             </View>
