@@ -1,12 +1,3 @@
-{/* IMPPLEMENTAR :
-    
-    - EXIBIR, EDITAR E EXCLUIR CLIENTES
-    - EXIBIR, EDITAR E EXCLUIR EMPRESAS
-    - EXIBIR, EDITAR E EXCLUIR GRUPOS 
-
-    */}
-
-
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -26,9 +17,10 @@ const userRegisterValidationSchema = yup.object().shape({
         then: (schema) => schema.required('Selecione a empresa para o Cliente'),
         otherwise: (schema) => schema.optional(),
     }),
-    groupId: yup.string().when('userType', {
-        is: 'Support',
-        then: (schema) => schema.required('Selecione o grupo do atendente'),
+    // 1. ALTERADO: Validação para array de categorias em vez de um único groupId
+    categoryIds: yup.array().of(yup.string().required()).when('userType', {
+        is: (val: string) => val === 'Support' || val === 'Admin',
+        then: (schema) => schema.min(1, 'Selecione pelo menos uma categoria/setor'),
         otherwise: (schema) => schema.optional(),
     }),
     temporaryPassword: yup.string()
@@ -43,18 +35,20 @@ const userRegisterValidationSchema = yup.object().shape({
 export default function RegisterUserForm () {
     const router = useRouter()
     const [companyList, setCompanyList] = useState<{ label: string, value:string}[]> ([])
-    const [groupList, setGroupList] = useState<{ label: string, value:string}[]> ([])
+    // 2. ALTERADO: Estado para armazenar as categorias vindas da API
+    const [categoryList, setCategoryList] = useState<{ id: string, name:string}[]> ([])
 
     useEffect(() => {
         async function fetchData() {
             try {
-                const [companyRes, groupRes] = await Promise.all([
+                // 3. ALTERADO: Busca no endpoint /category em vez de /group
+                const [companyRes, categoryRes] = await Promise.all([
                     api.get('/company'),
-                    api.get('/group')
+                    api.get('/category')
                 ]);
 
                 setCompanyList(companyRes.data.map((c: any) => ({ label: c.name, value: c.id })));
-                setGroupList(groupRes.data.map((g: any) => ({ label: g.name, value: g.id })));
+                setCategoryList(categoryRes.data.map((cat: any) => ({ id: cat.id, name: cat.name })));
             } catch (error) {
                 console.log("Erro ao buscar dados iniciais: ", error)
             }
@@ -64,12 +58,13 @@ export default function RegisterUserForm () {
 
     const { control, handleSubmit, clearErrors, watch, formState: {errors } } = useForm({
             resolver: yupResolver(userRegisterValidationSchema),
+            defaultValues: { categoryIds: [] }, // Inicializa o array para evitar erros de undefined
             mode: 'onSubmit'
         })
 
     const selectedUserType = watch('userType')
     
-    const handleRegister = async (userData: { name: string, email: string, userType: string, companyId?: string, groupId?: string, temporaryPassword: string}) => {
+    const handleRegister = async (userData: any) => {
         try {
             const payload: any = {
                 name: userData.name,
@@ -80,12 +75,11 @@ export default function RegisterUserForm () {
             if (userData.userType === 'Client') {
                 payload.companyId = userData.companyId;
                 await api.post('/auth/register/client', payload);
-            } else if (userData.userType === 'Support') {
-                payload.groupId = userData.groupId; 
-                await api.post('/auth/register/support', payload);
-            } else if (userData.userType === 'Admin') {
-                payload.groupId = userData.groupId; 
-                await api.post('/auth/register/admin', payload);
+            } else if (userData.userType === 'Support' || userData.userType === 'Admin') {
+                payload.categories = userData.categoryIds; 
+                
+                const endpoint = userData.userType === 'Support' ? '/auth/register/support' : '/auth/register/admin';
+                await api.post(endpoint, payload);
             }
 
             Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
@@ -111,7 +105,7 @@ export default function RegisterUserForm () {
     }
 
     return(
-        <KeyboardAwareScrollView>
+        <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
             {/* Campo Nome */}
             <View className="mb-5">
                 <Text className="mb-1">
@@ -191,7 +185,7 @@ export default function RegisterUserForm () {
                                     },
                                     placeholder: {
                                         color: 'gray',
-                                        fontSize: 8,
+                                        fontSize: 12,
                                     },
                                 }}
                                 items={[
@@ -206,28 +200,42 @@ export default function RegisterUserForm () {
                 {errors.userType && <Text className="text-xs text-red-500 mt-1">{errors.userType.message}</Text>}
             </View>
 
-            {/* Campo Grupo */}
+            {/* 6. NOVO CAMPO: Seleção Múltipla de Categorias */}
             {(selectedUserType === 'Support' || selectedUserType === 'Admin') && (
                 <View className="mb-5">
-                    <Text className="mb-1">Grupo</Text>
+                    <Text className="mb-2">Setores de Atendimento</Text>
                     <Controller
                         control={control}
-                        name="groupId"
-                        render={({ field: { onChange, value } }) => (
-                            <View className="border border-gray-400 rounded-lg h-16 justify-center focus:border-orange-700">
-                                <RNPickerSelect
-                                    onValueChange={(itemValue) => {
-                                        onChange(itemValue);
-                                        clearErrors("groupId");
-                                    }}
-                                    value={value}
-                                    placeholder={{ label: 'Selecione o grupo...', value: null }}
-                                    items={groupList}
-                                />
-                            </View>
-                        )}
+                        name="categoryIds"
+                        render={({ field: { onChange, value } }) => {
+                            const selected = value || [];
+                            return (
+                                <View className="flex-row flex-wrap gap-2">
+                                    {categoryList.map(cat => {
+                                        const isSelected = selected.includes(cat.id);
+                                        return (
+                                            <TouchableOpacity
+                                                key={cat.id}
+                                                onPress={() => {
+                                                    const newValue = isSelected 
+                                                        ? selected.filter(id => id !== cat.id)
+                                                        : [...selected, cat.id];
+                                                    onChange(newValue);
+                                                    clearErrors("categoryIds");
+                                                }}
+                                                className={`px-4 py-2 rounded-full border ${isSelected ? 'bg-orange-100 border-orange-500' : 'bg-white border-gray-400'}`}
+                                            >
+                                                <Text className={isSelected ? 'text-orange-700 font-bold' : 'text-gray-600'}>
+                                                    {cat.name}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )
+                                    })}
+                                </View>
+                            )
+                        }}
                     />
-                    {errors.groupId && <Text className="text-xs text-red-500 mt-1">{errors.groupId.message}</Text>}
+                    {errors.categoryIds && <Text className="text-xs text-red-500 mt-1">{errors.categoryIds.message}</Text>}
                 </View>
             )}
 
@@ -248,6 +256,14 @@ export default function RegisterUserForm () {
                                     value={value}
                                     placeholder={{ label: 'Selecione a empresa...', value: null }}
                                     items={companyList}
+                                    style={{
+                                        inputAndroid: {
+                                            fontSize: 12,
+                                            color: 'black', 
+                                            height: '100%',
+                                            paddingHorizontal: 8,
+                                        },
+                                    }}
                                 />
                             </View>
                         )}
