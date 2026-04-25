@@ -1,12 +1,14 @@
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import LoginForm from '@/components/auth/LoginForm';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 export default function Login() {
+   const router = useRouter();
 
   return (
     <SafeAreaView className='flex-1 px-4 bg-stone-50'>
-      <ScrollView>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         {/* Logo ProDesk */}
         <View className='flex items-center mb-14'>
           <Image
@@ -35,7 +37,7 @@ export default function Login() {
 
         {/* Regsitro e Recuperar Senha */}
         <View className='items-center'>
-          <TouchableOpacity onPress={() => {/* Funcao do Redirect */}}>
+          <TouchableOpacity onPress={() => router.push('/(auth)/forgotPassword')}>
             <Text className='mb-4 text-orange-500'>
             Esqueci minha senha
           </Text>
