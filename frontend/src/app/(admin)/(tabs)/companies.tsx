@@ -79,7 +79,7 @@ export default function Companies () {
 
     return (
         <SafeAreaView className="flex-1 px-4 bg-stone-50 mt-6">
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row items-center justify-between mb-6">
                     <View>
                         <Text className="text-2xl font-bold text-slate-900">Controle de Empresas</Text>
