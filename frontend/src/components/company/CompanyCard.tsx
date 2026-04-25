@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { MaterialIcons, Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 
 type Props = { 
   name: string
@@ -33,7 +33,7 @@ export default function CompanyCard({
     >
       <View className="flex-row justify-between items-start mb-4">
         <View className="w-14 h-14 rounded-xl bg-[#F1DEC7] flex items-center justify-center">
-          <MaterialIcons name="construction" size={26} color="#F97316" />
+          <FontAwesome name="building-o" size={24}  color="#F97316" />
         </View>
 
         <View className="px-3 py-1 rounded-full bg-green-200">

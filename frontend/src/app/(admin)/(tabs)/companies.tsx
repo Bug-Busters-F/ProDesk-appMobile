@@ -3,8 +3,9 @@ import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
-import CompanyCard from '@/components/CompanyCard';
+import CompanyCard from '@/components/company/CompanyCard';
 import api from '@/services/api';
+import EditCompanyModal from '@/components/company/EditCompanyModal';
 
 interface Company {
     id: string
@@ -14,9 +15,11 @@ interface Company {
 
 export default function Companies () {
     const router = useRouter();
-    const [focused, setFocused] = useState(false);
+    const [focused, setFocused] = useState(false)
     const [companies, setCompanies] =  useState<Company[]>([])
-    const [loading, setLoading ] = useState(true) 
+    const [loading, setLoading ] = useState(true)
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false)
+    const [companyToEdit, setCompanyToEdit] = useState<Company | null>(null)
 
     const fetchCompanies = async () => {
         try {
@@ -24,8 +27,8 @@ export default function Companies () {
             const response = await api.get('/company')
             setCompanies(response.data)
         } catch (error) {
-            console.error("Erro ao buscar empresas:", error);
-            Alert.alert("Erro", "Não foi possível carregar a lista de empresas.");
+            console.error("Erro ao buscar empresas:", error)
+            Alert.alert("Erro", "Não foi possível carregar a lista de empresas.")
         } finally {
             setLoading(false)
         }
@@ -61,11 +64,22 @@ export default function Companies () {
         )
     }
 
-    {/* handleEdit aqui */}
+    const handleOpenEdit = (company: Company) => {
+        setCompanyToEdit(company);
+        setIsEditModalVisible(true);
+    }
+
+    const handleUpdateSuccess = (updatedCompany: Company) => {
+        setCompanies((prevCompanies) => 
+            prevCompanies.map(company => 
+                company.id === updatedCompany.id ? updatedCompany : company
+            )
+        );
+    }
 
     return (
         <SafeAreaView className="flex-1 px-4 bg-stone-50 mt-6">
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row items-center justify-between mb-6">
                     <View>
                         <Text className="text-2xl font-bold text-slate-900">Controle de Empresas</Text>
@@ -145,12 +159,21 @@ export default function Companies () {
                             status="ACTIVE"
                             members={["JD"]}
                             extraMembers={4}
-                            onEdit={() => console.log("Editar")}
+                            onEdit={() => handleOpenEdit(company)}
                             onDelete={() => handleDelete(company.id, company.name)}
                         />
                     ))
                 )}
             </ScrollView>
+
+            <EditCompanyModal 
+                visible={isEditModalVisible}
+                company={companyToEdit}
+                onClose={() => setIsEditModalVisible(false)}
+                onSuccess={handleUpdateSuccess}
+            />
+            
         </SafeAreaView>
+        
     )
 }
