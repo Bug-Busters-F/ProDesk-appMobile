@@ -11,6 +11,7 @@ export type User = {
     email: string;
     role: UserRole;
     token: string; 
+    profileImage?: string | null;
 }
 
 export type AuthContextData = {
@@ -18,12 +19,13 @@ export type AuthContextData = {
     isLoading: boolean,
     signIn: (email: string, password: string) => Promise<UserRole>
     signOut: () => void
+    setUser?: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData)
 
 export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
-    const [user, setUser] = useState<User | null>(null)
+    const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
@@ -45,8 +47,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
         try {
             const response = await api.post('/auth/login', { email, password})
 
-            console.log('response.data:', response.data)        // 👈 o que vem do back?
-            console.log('token:', response.data?.token)         // 👈 o token existe?
+            console.log('response.data:', response.data)      
+            console.log('token:', response.data?.token)        
             console.log('tipo do token:', typeof response.data?.token)
 
             const { token } = response.data
@@ -84,7 +86,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, signIn, signOut}}>
+        <AuthContext.Provider value={{ user, isLoading, signIn, signOut, setUser}}>
             {children}
         </AuthContext.Provider>
     )
