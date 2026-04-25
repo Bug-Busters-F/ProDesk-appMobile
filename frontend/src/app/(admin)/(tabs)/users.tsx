@@ -99,7 +99,7 @@ export default function Users () {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row items-center justify-between mb-6">
                     <View>
-                        <Text className="text-2xl font-bold text-slate-900">Controle de Usuários</Text>
+                        <Text className="text-2xl font-bold text-slate-900 mb-2">Controle de Usuários</Text>
                         <Text className="text-slate-500">Gerencie os usuários do sistema</Text>
                     </View>
                     <TouchableOpacity

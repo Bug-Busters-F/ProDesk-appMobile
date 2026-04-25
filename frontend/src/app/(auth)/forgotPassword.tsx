@@ -46,14 +46,14 @@ export default function ForgotPassword() {
   };
 
   return (
-    <SafeAreaView className='flex-1 bg-stone-50'>
+    <SafeAreaView className='flex-1 bg-stone-50 mt-6'>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className='px-4'>
         {/* Secção de Instruções */}
-        <View className='flex items-center'>
-          <Text className='text-3xl font-bold mb-2 text-center'>
+        <View className='flex mb-4'>
+          <Text className='text-3xl font-bold mb-2'>
             Recuperar Senha
           </Text>
-          <Text className='text-lg mb-9 text-gray-500 text-center'>
+          <Text className='text-lg mb-9 text-gray-500'>
             Insira o seu e-mail registado para receber as instruções de redefinição.
           </Text>
         </View>
@@ -63,8 +63,8 @@ export default function ForgotPassword() {
           <View>
             <Text className='text-gray-700 mb-2 ml-1 font-medium'>E-mail</Text>
             <TextInput
-              className='bg-white border border-gray-200 p-4 rounded-xl text-lg'
-              placeholder="exemplo@prodesk.com.br"
+              className='bg-white border border-gray-300 p-4 rounded-xl text-lg'
+              placeholder="exemplo@email.com"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}

@@ -113,7 +113,7 @@ export default function RegisterUserForm () {
                     name="name"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.name ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite o nome completo"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -137,7 +137,7 @@ export default function RegisterUserForm () {
                     name="email"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.email ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite o email"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -162,7 +162,7 @@ export default function RegisterUserForm () {
                     control={control}
                     name="userType"
                     render={({ field: { onChange, value } }) => (
-                        <View className="border border-gray-400 rounded-lg h-16 justify-center focus:border-orange-700">
+                        <View className={`border rounded-lg h-16 focus:border-orange-700 ${errors.userType ? 'border-red-500' : 'border-gray-400'}`}>
                             <RNPickerSelect
                                 onValueChange={(itemValue) => {
                                     onChange(itemValue);
@@ -244,7 +244,7 @@ export default function RegisterUserForm () {
                         control={control}
                         name="companyId"
                         render={({ field: { onChange, value } }) => (
-                            <View className="border border-gray-400 rounded-lg h-16 justify-center focus:border-orange-700">
+                            <View className={`border rounded-lg h-16 focus:border-orange-700 ${errors.companyId ? 'border-red-500' : 'border-gray-400'}`}>
                                 <RNPickerSelect
                                     onValueChange={(itemValue) => {
                                         onChange(itemValue);
@@ -279,7 +279,7 @@ export default function RegisterUserForm () {
                     name="temporaryPassword"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.temporaryPassword ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite a senha temporária"
                             onBlur={onBlur}
                             onChangeText={(text) => {

@@ -53,7 +53,7 @@ export default function RegisterCompanyForm () {
                     name="name"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.name ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite o nome da empresa"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -77,7 +77,7 @@ export default function RegisterCompanyForm () {
                     name="cnpj"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.cnpj ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite apenas os números"
                             onBlur={onBlur}
                             onChangeText={(text) => {

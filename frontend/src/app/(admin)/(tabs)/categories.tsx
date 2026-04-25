@@ -78,7 +78,7 @@ export default function Categories() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View className="flex-row items-center justify-between mb-6">
           <View>
-            <Text className="text-2xl font-bold text-slate-900">Controle de Categorias</Text>
+            <Text className="text-2xl font-bold text-slate-900 mb-2">Controle de Categorias</Text>
             <Text className="text-slate-500">Gerencie os setores de atendimento</Text>
           </View>
           <TouchableOpacity

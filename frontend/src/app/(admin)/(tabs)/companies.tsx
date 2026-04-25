@@ -82,7 +82,7 @@ export default function Companies () {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row items-center justify-between mb-6">
                     <View>
-                        <Text className="text-2xl font-bold text-slate-900">Controle de Empresas</Text>
+                        <Text className="text-2xl font-bold text-slate-900 mb-2">Controle de Empresas</Text>
                         <Text className="text-slate-500">Gerencie as empresas do sistema</Text>
                     </View>
                     <TouchableOpacity

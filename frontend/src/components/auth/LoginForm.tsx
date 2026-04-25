@@ -32,7 +32,7 @@ export default function LoginForm () {
                 router.replace('/(admin)/(tabs)/adminHome');
                 break;
             case 'support':
-                router.replace('/(support)/supportHome'); 
+                router.replace('/(agent)/(tabs)/agentHome'); 
                 break;
             case 'client':
                 router.replace('/(client)/(tabs)/clientHome');
@@ -57,7 +57,7 @@ export default function LoginForm () {
                     name="email"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`rounded-lg px-2 h-16 focus:border-orange-700 border ${errors.email ? 'border-red-500' : 'border-gray-300'}`} 
                             placeholder="Digite seu email"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -83,7 +83,7 @@ export default function LoginForm () {
                     name="password"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="Digite sua senha"
                             onBlur={onBlur}
                             onChangeText={(text) => {

@@ -42,7 +42,7 @@ export default function Login() {
             Esqueci minha senha
           </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => {/* Funcao do Redirect */}}>
+          <TouchableOpacity onPress={() => router.push('/(auth)/registerAccess')}>
             <Text className='mb-24 underline text-gray-500'>
               Solicitar Acesso
             </Text>
