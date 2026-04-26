@@ -11,6 +11,7 @@ interface Company {
     id: string
     name: string
     cnpj: string
+    timestamp?: number // <-- ADICIONADO
 }
 
 export default function Companies () {
@@ -72,7 +73,8 @@ export default function Companies () {
     const handleUpdateSuccess = (updatedCompany: Company) => {
         setCompanies((prevCompanies) => 
             prevCompanies.map(company => 
-                company.id === updatedCompany.id ? updatedCompany : company
+                // <-- ADICIONADO: Gera um novo Date.now() para forçar o componente de imagem a atualizar
+                company.id === updatedCompany.id ? { ...updatedCompany, timestamp: Date.now() } : company
             )
         );
     }
@@ -127,26 +129,6 @@ export default function Companies () {
                         onBlur={() => setFocused(false)}
                     />
                 </View>
-                {/* 
-                    
-                    <View className="flex-row items-center px-5 py-5 rounded-2xl mb-6 bg-[#F5E9DA] border border-[#E8D5C0]">
-                        <View className="size-14 rounded-full bg-[#F1DEC7] flex items-center justify-center mr-5">
-                            <MaterialIcons name="apartment" size={26} color="#F97316" />
-                        </View>
-                       
-                        <View>
-                            <Text className="text-xs font-semibold tracking-widest text-orange-900">
-                            TOTAL DE EMPRESAS
-                            </Text>
-    
-                            <Text className="text-3xl font-bold text-orange-900">
-                            42
-                            </Text>
-                        </View>
-                    </View>
-                    
-                */}
-
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#F97316" className='mt-10' />
@@ -154,8 +136,10 @@ export default function Companies () {
                     companies?.map(company => (
                         <CompanyCard
                             key={company.id}
+                            id={company.id}
                             name={company.name}
                             cnpj={company.cnpj}
+                            timestamp={company.timestamp} // <-- ADICIONADO: Passando o gatilho de refresh para o card
                             status="ACTIVE"
                             members={["JD"]}
                             extraMembers={4}

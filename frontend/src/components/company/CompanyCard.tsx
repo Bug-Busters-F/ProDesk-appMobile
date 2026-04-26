@@ -1,9 +1,14 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Feather, FontAwesome } from "@expo/vector-icons";
+import { useState, useEffect } from "react";
+import api from "@/services/api";
+import { storage } from "@/utils/storage";
 
 type Props = { 
+  id: string 
   name: string
   cnpj: string
+  timestamp?: number // <-- ADICIONADO: Propriedade para controlar o refresh
   status?: "ACTIVE" | "INACTIVE"
   members?: string[];
   extraMembers?: number
@@ -12,14 +17,35 @@ type Props = {
 }
 
 export default function CompanyCard({
+  id,
   name,
   cnpj,
+  timestamp,
   status = "ACTIVE",
   members = [],
   extraMembers = 0,
   onEdit,
   onDelete,
 }: Props) {
+  const [imageError, setImageError] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [localTimestamp] = useState(Date.now()); // Timestamp padrão para a primeira renderização
+
+  useEffect(() => {
+    storage.getItem('prodesk_token').then(setToken);
+  }, []);
+
+  // <-- ADICIONADO: Se recebermos um novo timestamp do pai (após edição), resetamos o erro para forçar o recarregamento
+  useEffect(() => {
+    if (timestamp) {
+      setImageError(false);
+    }
+  }, [timestamp]);
+
+  // Usa o timestamp recebido da edição, ou o timestamp local inicial
+  const activeTimestamp = timestamp || localTimestamp;
+  const imageUrl = `${api.defaults.baseURL}/files/company/${id}?t=${activeTimestamp}`;
+
   return (
     <View
       className="bg-white rounded-2xl p-5 mb-4"
@@ -32,8 +58,20 @@ export default function CompanyCard({
       }}
     >
       <View className="flex-row justify-between items-start mb-4">
-        <View className="w-14 h-14 rounded-xl bg-[#F1DEC7] flex items-center justify-center">
-          <FontAwesome name="building-o" size={24}  color="#F97316" />
+        <View className="w-14 h-14 rounded-xl bg-[#F1DEC7] flex items-center justify-center overflow-hidden">
+          {id && !imageError ? (
+            <Image 
+              source={{ 
+                uri: imageUrl,
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+              }} 
+              className="w-full h-full"
+              onError={() => setImageError(true)}
+              resizeMode="cover"
+            />
+          ) : (
+            <FontAwesome name="building-o" size={24} color="#F97316" />
+          )}
         </View>
 
         <View className="px-3 py-1 rounded-full bg-green-200">
