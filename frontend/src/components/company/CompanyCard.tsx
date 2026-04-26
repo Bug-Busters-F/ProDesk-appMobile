@@ -8,7 +8,7 @@ type Props = {
   id: string 
   name: string
   cnpj: string
-  timestamp?: number // <-- ADICIONADO: Propriedade para controlar o refresh
+  timestamp?: number 
   status?: "ACTIVE" | "INACTIVE"
   members?: string[];
   extraMembers?: number
@@ -29,20 +29,18 @@ export default function CompanyCard({
 }: Props) {
   const [imageError, setImageError] = useState(false);
   const [token, setToken] = useState<string | null>(null);
-  const [localTimestamp] = useState(Date.now()); // Timestamp padrão para a primeira renderização
+  const [localTimestamp] = useState(Date.now()); 
 
   useEffect(() => {
     storage.getItem('prodesk_token').then(setToken);
   }, []);
 
-  // <-- ADICIONADO: Se recebermos um novo timestamp do pai (após edição), resetamos o erro para forçar o recarregamento
   useEffect(() => {
     if (timestamp) {
       setImageError(false);
     }
   }, [timestamp]);
 
-  // Usa o timestamp recebido da edição, ou o timestamp local inicial
   const activeTimestamp = timestamp || localTimestamp;
   const imageUrl = `${api.defaults.baseURL}/files/company/${id}?t=${activeTimestamp}`;
 
@@ -89,7 +87,7 @@ export default function CompanyCard({
         {cnpj}
       </Text>
 
-      <View className="h-[1px] bg-[#E8D5C0] mb-4" />
+      <View className="h-[1px] bg-gray-200 mb-4" />
 
       <View className="flex-row justify-between items-center">
         <View className="flex-row items-center">

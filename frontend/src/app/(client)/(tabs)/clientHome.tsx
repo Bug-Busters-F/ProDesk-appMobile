@@ -2,8 +2,11 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 export default function Home() {
+  const router = useRouter();
+
   return (
     <SafeAreaView className="flex-1 bg-stone-50">
       <View className="flex-1 px-5 pt-6">
@@ -82,7 +85,7 @@ export default function Home() {
               Encontre respostas rápidas para as dúvidas mais comuns de outros usuários.
             </Text>
 
-            <TouchableOpacity className="w-full bg-orange-100 py-3 rounded-xl items-center">
+            <TouchableOpacity onPress={() => router.push('/(client)/faq')} className="w-full bg-orange-100 py-3 rounded-xl items-center">
               <Text className="text-orange-500 font-semibold">
                 Explorar FAQ
               </Text>

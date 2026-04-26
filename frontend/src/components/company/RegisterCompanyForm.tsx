@@ -54,7 +54,6 @@ export default function RegisterCompanyForm () {
 
             const companyId = response.data.id || response.data._id;
 
-            // Se o usuário selecionou uma imagem, faz o upload para a nova empresa
             if (selectedImage && companyId) {
                 const formData = new FormData();
                 formData.append('file', {

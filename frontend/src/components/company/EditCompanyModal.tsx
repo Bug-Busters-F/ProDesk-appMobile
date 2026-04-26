@@ -52,7 +52,7 @@ export default function EditCompanyModal({ visible, company, onClose, onSuccess 
             clearErrors();
             setSelectedImage(null);
             setImageError(false);
-            setTimestamp(Date.now()); // Força o refresh da foto atual
+            setTimestamp(Date.now()); 
         }
     }, [company, visible, reset, clearErrors]);
 
@@ -78,7 +78,7 @@ export default function EditCompanyModal({ visible, company, onClose, onSuccess 
 
         if (!result.canceled) {
             setSelectedImage(result.assets[0].uri);
-            setImageError(false); // Reseta erro caso o usuário tenha pego uma nova imagem
+            setImageError(false); 
         }
     };
 
@@ -96,10 +96,8 @@ export default function EditCompanyModal({ visible, company, onClose, onSuccess 
                 payload.cnpj = cleanCnpj;
             }
 
-            // Atualiza os dados de texto
             await api.patch(`/company/${company.id}`, payload);
 
-            // Atualiza a imagem, se houver uma nova
             if (selectedImage) {
                 const formData = new FormData();
                 formData.append('file', {

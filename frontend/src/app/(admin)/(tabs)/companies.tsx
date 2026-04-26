@@ -11,7 +11,7 @@ interface Company {
     id: string
     name: string
     cnpj: string
-    timestamp?: number // <-- ADICIONADO
+    timestamp?: number 
 }
 
 export default function Companies () {
@@ -73,7 +73,6 @@ export default function Companies () {
     const handleUpdateSuccess = (updatedCompany: Company) => {
         setCompanies((prevCompanies) => 
             prevCompanies.map(company => 
-                // <-- ADICIONADO: Gera um novo Date.now() para forçar o componente de imagem a atualizar
                 company.id === updatedCompany.id ? { ...updatedCompany, timestamp: Date.now() } : company
             )
         );
@@ -139,7 +138,7 @@ export default function Companies () {
                             id={company.id}
                             name={company.name}
                             cnpj={company.cnpj}
-                            timestamp={company.timestamp} // <-- ADICIONADO: Passando o gatilho de refresh para o card
+                            timestamp={company.timestamp} 
                             status="ACTIVE"
                             members={["JD"]}
                             extraMembers={4}
