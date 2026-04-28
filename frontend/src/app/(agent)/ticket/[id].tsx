@@ -58,6 +58,7 @@ export default function AgentTicketChatScreen() {
         text: msg.content,
         sender: isMe ? 'USER' : 'AGENT',
         agentName: isMe ? undefined : 'Cliente',
+        attachmentUrl: msg.attachmentUrl,
         time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       } as MessageType]); 
     });

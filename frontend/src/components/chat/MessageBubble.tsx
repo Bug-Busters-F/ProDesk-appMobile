@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Image, Linking, TouchableOpacity } from 'react-native';
 
 export type MessageType = {
   id: string;
@@ -7,6 +7,8 @@ export type MessageType = {
   sender: 'USER' | 'BOT' | 'AGENT';
   agentName?: string;
   time: string;
+  attachmentUrl?: string;
+  type?: string; // ADICIONADO
 };
 
 type Props = {
@@ -15,6 +17,12 @@ type Props = {
 
 export function MessageBubble({ message }: Props) {
   const isUser = message.sender === 'USER';
+  
+  const handleOpenAttachment = () => {
+    if (message.attachmentUrl) {
+      Linking.openURL(message.attachmentUrl);
+    }
+  };
 
   return (
     <View className={`mb-6 ${isUser ? 'items-end' : 'items-start'}`}>
@@ -38,6 +46,26 @@ export function MessageBubble({ message }: Props) {
               : 'bg-slate-50 border border-slate-100 rounded-tl-sm'
           }`}
         >
+          {message.attachmentUrl && (
+            <View className="mb-2">
+              {/* CORREÇÃO: Forçando renderizar como imagem se o type for IMAGE */}
+              {message.type === 'IMAGE' || message.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                <Image 
+                  source={{ uri: message.attachmentUrl }} 
+                  style={{ width: 200, height: 200, borderRadius: 8 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <TouchableOpacity 
+                  onPress={handleOpenAttachment}
+                  className="bg-white/50 p-2 rounded-lg flex-row items-center border border-slate-200"
+                >
+                  <Text className="text-blue-500 font-bold ml-1">Abrir anexo</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
           <Text className="text-slate-800 leading-5">{message.text}</Text>
         </View>
       </View>

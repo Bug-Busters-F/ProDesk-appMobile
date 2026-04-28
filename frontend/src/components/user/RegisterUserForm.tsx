@@ -17,6 +17,7 @@ const userRegisterValidationSchema = yup.object().shape({
         then: (schema) => schema.required('Selecione a empresa para o Cliente'),
         otherwise: (schema) => schema.optional(),
     }),
+
     categoryIds: yup.array().of(yup.string().required()).when('userType', {
         is: (val: string) => val === 'Support' || val === 'Admin',
         then: (schema) => schema.min(1, 'Selecione pelo menos uma categoria/setor'),
@@ -197,7 +198,6 @@ export default function RegisterUserForm () {
                 {errors.userType && <Text className="text-xs text-red-500 mt-1">{errors.userType.message}</Text>}
             </View>
 
-            {/*Seleção de Categorias */}
             {(selectedUserType === 'Support' || selectedUserType === 'Admin') && (
                 <View className="mb-5">
                     <Text className="mb-2">Setores de Atendimento</Text>
