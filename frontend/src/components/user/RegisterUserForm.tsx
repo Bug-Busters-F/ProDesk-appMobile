@@ -17,7 +17,7 @@ const userRegisterValidationSchema = yup.object().shape({
         then: (schema) => schema.required('Selecione a empresa para o Cliente'),
         otherwise: (schema) => schema.optional(),
     }),
-    // 1. ALTERADO: Validação para array de categorias em vez de um único groupId
+
     categoryIds: yup.array().of(yup.string().required()).when('userType', {
         is: (val: string) => val === 'Support' || val === 'Admin',
         then: (schema) => schema.min(1, 'Selecione pelo menos uma categoria/setor'),
@@ -35,13 +35,11 @@ const userRegisterValidationSchema = yup.object().shape({
 export default function RegisterUserForm () {
     const router = useRouter()
     const [companyList, setCompanyList] = useState<{ label: string, value:string}[]> ([])
-    // 2. ALTERADO: Estado para armazenar as categorias vindas da API
     const [categoryList, setCategoryList] = useState<{ id: string, name:string}[]> ([])
 
     useEffect(() => {
         async function fetchData() {
             try {
-                // 3. ALTERADO: Busca no endpoint /category em vez de /group
                 const [companyRes, categoryRes] = await Promise.all([
                     api.get('/company'),
                     api.get('/category')
@@ -58,7 +56,7 @@ export default function RegisterUserForm () {
 
     const { control, handleSubmit, clearErrors, watch, formState: {errors } } = useForm({
             resolver: yupResolver(userRegisterValidationSchema),
-            defaultValues: { categoryIds: [] }, // Inicializa o array para evitar erros de undefined
+            defaultValues: { categoryIds: [] }, 
             mode: 'onSubmit'
         })
 
@@ -200,7 +198,6 @@ export default function RegisterUserForm () {
                 {errors.userType && <Text className="text-xs text-red-500 mt-1">{errors.userType.message}</Text>}
             </View>
 
-            {/* 6. NOVO CAMPO: Seleção Múltipla de Categorias */}
             {(selectedUserType === 'Support' || selectedUserType === 'Admin') && (
                 <View className="mb-5">
                     <Text className="mb-2">Setores de Atendimento</Text>
