@@ -32,7 +32,7 @@ export default function NewTicket() {
       const category = triageData.value || 'OTHER';
       const ticketResponse = await fetch(`${BACKEND_URL}/tickets`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `Bearer ${user?.token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(),
           category: category,
