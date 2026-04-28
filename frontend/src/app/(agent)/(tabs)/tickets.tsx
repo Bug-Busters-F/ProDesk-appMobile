@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Ref
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AgentTicketCard, AgentTicketStatus } from '@/components/tickets/AgentTicketCard';
+import { useAuth } from '@/contexts/AuthContext';
 
 const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 
@@ -13,10 +14,16 @@ export default function AgentTickets() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const {user} = useAuth();
 
   const fetchTickets = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/tickets`);
+      const response = await fetch(`${BACKEND_URL}/tickets`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user?.token}`
+        }
+      });
       if (!response.ok) throw new Error('Falha ao buscar chamados');
       
       const data = await response.json();

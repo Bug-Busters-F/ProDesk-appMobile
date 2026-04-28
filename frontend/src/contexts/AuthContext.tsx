@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
             const { token } = response.data
 
             const decoded: any = jwtDecode(token)
+            console.log('decoded token:', decoded)              // 👈 o que tem dentro do token?
 
             const userData: User = {
                 id: decoded.sub,

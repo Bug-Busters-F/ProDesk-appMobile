@@ -1,5 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +23,7 @@ const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 export default function Tickets() {
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -23,8 +31,10 @@ export default function Tickets() {
 
   const fetchTickets = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/tickets`);
-      
+      const response = await fetch(`${BACKEND_URL}/tickets`, {
+        headers: { Authorization: `Bearer ${user?.token}`, 'Content-Type': 'application/json' },
+      });
+
       if (!response.ok) {
         throw new Error('Falha ao buscar chamados');
       }
@@ -44,12 +54,14 @@ export default function Tickets() {
         closedAt: t.closedAt || t.props?.closedAt,
       }));
 
-      formattedTickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      formattedTickets.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
 
       setTickets(formattedTickets);
     } catch (error) {
       console.error(error);
-      Alert.alert("Erro", "Não foi possível carregar os seus chamados.");
+      Alert.alert('Erro', 'Não foi possível carregar os seus chamados.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -59,7 +71,7 @@ export default function Tickets() {
   useFocusEffect(
     useCallback(() => {
       fetchTickets();
-    }, [user?.id])
+    }, [user?.id]),
   );
 
   const onRefresh = () => {
@@ -77,8 +89,8 @@ export default function Tickets() {
 
   return (
     <View className="flex-1 bg-stone-50">
-      <ScrollView 
-        className="flex-1 pt-12 px-6" 
+      <ScrollView
+        className="flex-1 pt-12 px-6"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#f97316']} />
@@ -99,7 +111,7 @@ export default function Tickets() {
 
         {/* FILTROS */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8 h-10">
-          {['Todos', 'Abertos', 'Em Progresso', 'Resolvidos'].map((filter) => {
+          {['Todos', 'Abertos', 'Em Progresso', 'Resolvidos'].map(filter => {
             const isActive = activeFilter === filter;
             return (
               <TouchableOpacity
@@ -128,14 +140,14 @@ export default function Tickets() {
               ticket={ticket}
               onPress={async () => {
                 try {
-                  const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticket._id}`); 
+                  const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticket._id}`);
                   const chatData = await res.json();
                   const chatId = chatData?.id || chatData?._id;
-                  
+
                   if (chatId) {
                     router.push({
                       pathname: '/(client)/ticket/[id]',
-                      params: { id: chatId }
+                      params: { id: chatId },
                     });
                   } else {
                     Alert.alert('Aviso', 'O chat deste chamado ainda não foi criado.');
