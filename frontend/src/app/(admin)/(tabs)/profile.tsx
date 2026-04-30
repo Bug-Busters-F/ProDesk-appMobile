@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,14 +14,18 @@ type Category = {
 export default function AdminProfile() {
   const { user, signOut, setUser } = useAuth(); 
   const [image, setImage] = useState<string | null>(null);
+  const [hasImage, setHasImage] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
+  const imageKeyRef = useRef(0);
+
   useEffect(() => {
     if (user?.id) {
+      imageKeyRef.current += 1;
       setImage(`${api.defaults.baseURL}/files/profile/${user.id}?${new Date().getTime()}`);
+      setHasImage(false);
       fetchUserData();
     }
   }, [user?.id]);
@@ -72,8 +76,10 @@ export default function AdminProfile() {
 
   const uploadImage = async (uri: string) => {
     setIsUploading(true);
+
+    imageKeyRef.current += 1;
+
     const formData = new FormData();
-    
     const uriParts = uri.split('.');
     const fileType = uriParts[uriParts.length - 1] || 'jpeg'; 
     formData.append('file', { 
@@ -91,6 +97,7 @@ export default function AdminProfile() {
       });
 
       setImage(uri);
+      setHasImage(true);
       
       if (response.data && setUser && user) {
         setUser({ ...user, profileImage: response.data.path || uri });
@@ -117,7 +124,10 @@ export default function AdminProfile() {
           onPress: async () => {
             try {
               await api.delete('/files/profile');
+              imageKeyRef.current += 1;
               setImage(null);
+              setHasImage(false);
+
               if (setUser && user) setUser({ ...user, profileImage: null });
             } catch (error) {
               Alert.alert("Erro", "Não foi possível remover a foto.");
@@ -139,6 +149,19 @@ export default function AdminProfile() {
     );
   };
 
+  const handleImageLoad = (key: number) => {
+    if (key === imageKeyRef.current) {
+      setHasImage(true);
+    }
+  };
+
+  const handleImageError = (key: number) => {
+    if (key === imageKeyRef.current) {
+      setHasImage(false);
+      setImage(null);
+    }
+  };
+
   return (
     <SafeAreaView className='flex-1 bg-stone-50 dark:bg-stone-950'>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className='px-6 pt-10'>
@@ -148,7 +171,18 @@ export default function AdminProfile() {
           <View className='relative'>
             <View className='w-32 h-32 rounded-full bg-stone-200 dark:bg-stone-800 items-center justify-center border-4 border-white dark:border-stone-900 shadow-sm overflow-hidden'>
               {image ? (
-                <Image source={{ uri: image }} className='w-full h-full' />
+                <>
+                  <Image
+                    source={{ uri: image }}
+                    className='w-full h-full'
+                    onLoad={() => handleImageLoad(imageKeyRef.current)}
+                    onError={() => handleImageError(imageKeyRef.current)}
+                    style={hasImage ? undefined : { width: 0, height: 0 }}
+                  />
+                  {!hasImage && (
+                    <Ionicons name="person" size={64} color="#a8a29e" />
+                  )}
+                </>
               ) : (
                 <Ionicons name="person" size={64} color="#a8a29e" />
               )}
@@ -171,7 +205,7 @@ export default function AdminProfile() {
             <TouchableOpacity onPress={handlePickImage}>
               <Text className='text-orange-500 font-semibold'>Alterar foto</Text>
             </TouchableOpacity>
-            {image && (
+            {hasImage && (
               <TouchableOpacity onPress={handleRemoveImage}>
                 <Text className='text-red-500 font-semibold'>Remover</Text>
               </TouchableOpacity>

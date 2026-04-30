@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import ClientFaqCard from '@/components/faq/clientFaqCard';
+import ClientFaqCard from '@/components/faq/ClientFaqCard';
 
 const MOCK_FAQS = [
     { id: '1', question: 'Como faço para redefinir minha senha?', answer: 'Na tela de login, clique em "Esqueci minha senha". Enviaremos um e-mail com as instruções para cadastrar uma nova senha segura.' },

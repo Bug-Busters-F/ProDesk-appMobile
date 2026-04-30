@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import AdminFaqCard from '@/components/faq/adminFaqCard';
+import AdminFaqCard from '@/components/faq/AdminFaqCard';
 
 const INITIAL_MOCK = [
     { id: '1', question: 'Como faço para redefinir minha senha?', answer: 'Na tela de login, clique em "Esqueci minha senha".' },
@@ -49,7 +49,7 @@ export default function FaqManagement() {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row items-center justify-between mb-6">
                     <View className="flex-row items-center flex-1">
-                        <TouchableOpacity onPress={() => router.back()} className="mr-3">
+                        <TouchableOpacity onPress={() => router.push("/(admin)/(tabs)/adminHome")} className="mr-3">
                             <Ionicons name="arrow-back" size={28} color="#334155" />
                         </TouchableOpacity>
                         <View>

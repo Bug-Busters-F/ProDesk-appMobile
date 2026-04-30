@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import RegisterFaqForm from '@/components/faq/registerFaqForm';
+import RegisterFaqForm from '@/components/faq/RegisterFaqForm';
 
 export default function RegisterFaq() {
   return (
