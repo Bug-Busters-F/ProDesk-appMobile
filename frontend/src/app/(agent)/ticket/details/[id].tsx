@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Image, Modal, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,12 +7,13 @@ import { Feather, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-ico
 import { useAuth, api } from '@/contexts/AuthContext';
 
 export default function TicketDetails() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
 
   const [ticket, setTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const fetchTicket = async () => {
     try {
@@ -110,7 +111,7 @@ export default function TicketDetails() {
           <Text className="text-orange-500 font-bold text-sm">#{ticket.id}</Text>
         </View>
 
-        <TouchableOpacity className="p-2">
+        <TouchableOpacity onPress={() => setIsMenuVisible(true)} className="p-2">
           <Feather name="more-vertical" size={24} color="#1e293b" />
         </TouchableOpacity>
       </View>
@@ -256,6 +257,43 @@ export default function TicketDetails() {
         </View>
 
       </ScrollView>
+
+      <Modal
+        visible={isMenuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsMenuVisible(false)} 
+      >
+        <Pressable 
+          className="flex-1 bg-black/20" 
+          onPress={() => setIsMenuVisible(false)}
+        >
+          <View className="absolute top-16 right-4 w-56 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            
+            <TouchableOpacity
+              onPress={() => {
+                setIsMenuVisible(false); 
+                router.push({
+                  pathname: '/(agent)/ticket/history/[id]',
+                  params: { id }
+                });
+              }}
+              className="flex-row items-center px-4 py-4 border-b border-gray-50 active:bg-gray-50"
+            >
+              <Feather name="clock" size={18} color="#64748b" />
+              <Text className="ml-3 text-slate-700 font-medium">Ver Histórico</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setIsMenuVisible(false)}
+              className="flex-row items-center px-4 py-4 active:bg-gray-50"
+            >
+              <Feather name="x" size={18} color="#ef4444" />
+              <Text className="ml-3 text-red-500 font-medium">Cancelar</Text>
+            </TouchableOpacity>
+            
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
