@@ -29,14 +29,11 @@ export default function TicketDetails() {
     fetchTicket();
   }, []);
 
-  // 🔥 ASSUMIR CHAMADO
   const handleAssignAgent = async () => {
     if (!user) {
       Alert.alert('Erro', 'Usuário não autenticado');
       return;
     }
-
-    // evita conflito de atendente
     if (ticket?.agentId && ticket.agentId !== user.id) {
       Alert.alert('Aviso', 'Este chamado já está com outro atendente');
       return;
@@ -48,8 +45,6 @@ export default function TicketDetails() {
       });
 
       await fetchTicket();
-
-      // já abre o chat automaticamente (UX melhor)
       handleOpenChat();
 
     } catch (error: any) {
@@ -58,8 +53,11 @@ export default function TicketDetails() {
     }
   };
 
-  // 🔥 ABRIR CHAT
   const handleOpenChat = async () => {
+    if (user?.role === 'support' && ticket?.agentId && ticket.agentId !== user.id) {
+      Alert.alert('Aviso', 'Este chamado já está em atendimento por outro atendente.');
+      return;
+    }
     try {
       const res = await api.get(`/chat/ticket/${id}`);
       const chatData = res.data;
@@ -210,17 +208,30 @@ export default function TicketDetails() {
                 Atender Chamado
               </Text>
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handleOpenChat}
-              className="bg-orange-500 py-4 rounded-2xl flex-row justify-center items-center mb-4"
-            >
-              <MaterialCommunityIcons name="reply" size={22} color="white" />
-              <Text className="text-white font-bold text-base ml-2">
-                Responder Cliente
-              </Text>
-            </TouchableOpacity>
-          )}
+            ) : (
+              user?.role === 'admin' || ticket.agentId === user?.id || ticket.clientId === user?.id ? (
+                <TouchableOpacity
+                  onPress={handleOpenChat}
+                  className="bg-orange-500 py-4 rounded-2xl flex-row justify-center items-center mb-4"
+                >
+                  <MaterialCommunityIcons name="reply" size={22} color="white" />
+                  <Text className="text-white font-bold text-base ml-2">
+                    Responder Cliente
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={1} 
+                  onPress={handleOpenChat} 
+                  className="bg-gray-200 py-4 rounded-2xl flex-row justify-center items-center mb-4"
+                >
+                  <MaterialCommunityIcons name="lock-outline" size={22} color="#64748b" />
+                  <Text className="text-slate-500 font-bold text-base ml-2">
+                    Em atendimento por outro colaborador
+                  </Text>
+                </TouchableOpacity>
+              )
+            )}
 
           <TouchableOpacity
             onPress={handleChangeStatus}
