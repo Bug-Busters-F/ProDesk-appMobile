@@ -12,13 +12,32 @@ export default function TicketDetails() {
   const { user } = useAuth();
 
   const [ticket, setTicket] = useState<any>(null);
+  const [clientInfo, setClientInfo] = useState<{ name: string, company: string, profileImage?: string }>({
+    name: 'Carregando...',
+    company: '...',
+  });
   const [loading, setLoading] = useState(true);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   const fetchTicket = async () => {
     try {
       const res = await api.get(`/tickets/${id}`);
-      setTicket(res.data);
+      const ticketData = res.data;
+      setTicket(ticketData);
+      if (ticketData.clientId) {
+        try {
+          const userRes = await api.get(`/user/${ticketData.clientId}`);
+          setClientInfo({
+            name: userRes.data.name,
+            company: userRes.data.company?.name || 'Sem empresa',
+            profileImage: userRes.data.profileImage
+          });
+        } catch (userError) {
+          console.log("Erro ao buscar dados do cliente", userError);
+          setClientInfo({ name: 'Usuário Desconhecido', company: '-' });
+        }
+      }
     } catch (e) {
       Alert.alert('Erro', 'Não foi possível carregar o chamado');
     } finally {
@@ -56,7 +75,7 @@ export default function TicketDetails() {
 
   const handleOpenChat = async () => {
     if (user?.role === 'support' && ticket?.agentId && ticket.agentId !== user.id) {
-      Alert.alert('Aviso', 'Este chamado já está em atendimento por outro atendente.');
+      setShowWarningModal(true);
       return;
     }
     try {
@@ -148,10 +167,12 @@ export default function TicketDetails() {
             <Text className="text-slate-400 text-xs font-bold mb-2">CLIENTE</Text>
             <View className="flex-row items-center">
               <Image
-                source={{ uri: ticket.clientAvatar || 'https://i.pravatar.cc/100?img=33' }}
+                source={{ uri: clientInfo.profileImage || 'https://i.pravatar.cc/100?img=33' }}
                 className="w-7 h-7 rounded-full mr-2 bg-gray-300"
               />
-              <Text className="text-slate-800 font-medium">{ticket.clientName || 'Cliente'}</Text>
+              <Text className="text-slate-800 font-medium" numberOfLines={1}>
+                {clientInfo.name}
+              </Text>
             </View>
           </View>
 
@@ -159,7 +180,9 @@ export default function TicketDetails() {
             <Text className="text-slate-400 text-xs font-bold mb-2">EMPRESA</Text>
             <View className="flex-row items-center">
               <MaterialIcons name="domain" size={18} color="#94a3b8" />
-              <Text className="text-slate-800 font-medium ml-1.5">{ticket.company || '-'}</Text>
+              <Text className="text-slate-800 font-medium ml-1.5" numberOfLines={1}>
+                {clientInfo.company}
+              </Text>
             </View>
           </View>
         </View>
@@ -292,6 +315,51 @@ export default function TicketDetails() {
             </TouchableOpacity>
             
           </View>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={showWarningModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowWarningModal(false)}
+      >
+        <Pressable 
+          className="flex-1 justify-end bg-black/40"
+          onPress={() => setShowWarningModal(false)} 
+        >
+          <Pressable className="bg-white pt-4 pb-10 px-6 rounded-t-3xl shadow-2xl">
+            
+            <View className="items-center mb-6">
+              <View className="w-12 h-1.5 bg-gray-200 rounded-full" />
+            </View>
+
+            {/* Ícone */}
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-red-50 rounded-full items-center justify-center">
+                <Feather name="shield-off" size={28} color="#ef4444" />
+              </View>
+            </View>
+
+            {/* Textos */}
+            <Text className="text-2xl font-bold text-slate-800 text-center mb-2">
+              Acesso Restrito
+            </Text>
+            <Text className="text-slate-500 text-center mb-8 leading-6 text-base">
+              Este chamado já está sendo atendido por outro especialista. Apenas o responsável pode visualizar e enviar mensagens.
+            </Text>
+
+            {/* Botão de Ação Primária */}
+            <TouchableOpacity
+              onPress={() => setShowWarningModal(false)}
+              className="bg-slate-800 py-4 rounded-2xl items-center"
+            >
+              <Text className="text-white font-bold text-lg">
+                Entendi
+              </Text>
+            </TouchableOpacity>
+
+          </Pressable>
         </Pressable>
       </Modal>
     </SafeAreaView>
