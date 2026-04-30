@@ -1,31 +1,73 @@
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+// bug-busters-f/prodesk-appmobile/ProDesk-appMobile-feat-recuperacao-senha/frontend/src/app/(auth)/resetPassword.tsx
+
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import api from '@/services/api';
+
+// Bibliotecas de validação seguindo o padrão do projeto
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+
+// Definição do Schema de validação com Yup
+const schema = yup.object({
+  password: yup
+    .string()
+    .min(6, 'A senha deve ter pelo menos 6 caracteres')
+    .required('A senha é obrigatória'),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password')], 'As senhas não coincidem')
+    .required('A confirmação de senha é obrigatória'),
+});
+
+type FormData = yup.InferType<typeof schema>;
 
 export default function ResetPassword() {
   const { token } = useLocalSearchParams(); 
   const router = useRouter();
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Estados para visibilidade da senha
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleResetPassword = async () => {
+  // Configuração do formulário
+  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      password: '',
+      confirmPassword: ''
+    }
+  });
+
+  const onSubmit = async (data: FormData) => {
     if (!token) {
       Alert.alert('Erro', 'Token de redefinição inválido ou ausente.');
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem.');
-      return;
-    }
+    setIsLoading(true);
 
     try {
-      Alert.alert('Sucesso', 'Senha alterada com sucesso!');
-      router.replace('/(auth)/login'); 
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível alterar a senha.');
+      await api.post('/auth/reset-password', { 
+        token, 
+        newPassword: data.password 
+      });
+
+      Alert.alert('Sucesso', 'Senha alterada com sucesso!', [
+        { text: 'Ir para Login', onPress: () => router.replace('/(auth)/login') }
+      ]);
+    } catch (error: any) {
+      console.error('Erro ao redefinir senha:', error);
+      const message = error.response?.data?.message || 'Não foi possível alterar a senha. O link pode ter expirado.';
+      Alert.alert('Erro', message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,28 +80,92 @@ export default function ResetPassword() {
         </Text>
       </View>
 
-      <View className='space-y-4'>
-        <TextInput
-          className='bg-white border border-gray-300 p-4 rounded-lg'
-          placeholder="Nova Senha"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TextInput
-          className='bg-white border border-gray-300 p-4 rounded-lg mt-4'
-          placeholder="Confirme a Nova Senha"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
+      <View className='gap-y-4'>
+        
+        {/* Campo de Nova Senha */}
+        <View>
+          <Text className='text-gray-700 mb-2 ml-1 font-medium'>Nova Senha</Text>
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <View className={`flex-row items-center bg-white border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4`}>
+                <TextInput
+                  className='flex-1 py-4 text-lg'
+                  placeholder="Digite a senha"
+                  secureTextEntry={!showPassword}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  editable={!isLoading}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Ionicons 
+                    name={showPassword ? "eye-off" : "eye"} 
+                    size={22} 
+                    color="#6b7280" 
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+          {errors.password && (
+            <Text className="text-red-500 text-sm mt-1 ml-1">{errors.password.message}</Text>
+          )}
+        </View>
 
+        {/* Campo de Confirmação de Senha */}
+        <View>
+          <Text className='text-gray-700 mb-2 ml-1 font-medium'>Confirme a Nova Senha</Text>
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <View className={`flex-row items-center bg-white border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4`}>
+                <TextInput
+                  className='flex-1 py-4 text-lg'
+                  placeholder="Confirme a senha"
+                  secureTextEntry={!showConfirmPassword}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  editable={!isLoading}
+                />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  <Ionicons 
+                    name={showConfirmPassword ? "eye-off" : "eye"} 
+                    size={22} 
+                    color="#6b7280" 
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+          {errors.confirmPassword && (
+            <Text className="text-red-500 text-sm mt-1 ml-1">{errors.confirmPassword.message}</Text>
+          )}
+        </View>
+
+        {/* Botão de Ação */}
         <TouchableOpacity 
-          className='bg-orange-500 p-4 rounded-lg mt-8 items-center'
-          onPress={handleResetPassword}
+          className={`p-4 rounded-lg mt-8 items-center ${isLoading ? 'bg-orange-300' : 'bg-orange-500'}`}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isLoading}
         >
-          <Text className='text-white font-bold text-lg'>Redefinir Senha</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text className='text-white font-bold text-lg'>Redefinir Senha</Text>
+          )}
         </TouchableOpacity>
+
+        <View className='items-center mt-8'>
+          <TouchableOpacity onPress={() => router.back()} disabled={isLoading}>
+            <Text className='text-gray-500 underline'>
+              Voltar para o Login
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
