@@ -1,17 +1,15 @@
-// frontend/src/app/(auth)/forgotPassword.tsx
 import { View, Text, TouchableOpacity, Image, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import api from '@/services/api'; // Importação da sua API configurada
+import api from '@/services/api';
 
 export default function ForgotPassword() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Estado para controlar o loading
+  const [isLoading, setIsLoading] = useState(false); 
 
   const handleSendLink = async () => {
-    // Validação simples
     if (!email.trim()) {
       Alert.alert('Atenção', 'Por favor, insira o seu e-mail.');
       return;
@@ -20,8 +18,6 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      // Faz a requisição POST para o backend
-      // NOTA: Confirme se o caminho do endpoint é exatamente '/auth/forgot-password'
       await api.post('/auth/forgot-password', { email });
       
       Alert.alert(
@@ -30,7 +26,7 @@ export default function ForgotPassword() {
         [
           { 
             text: 'Voltar ao Login', 
-            onPress: () => router.back() // Volta para o login automaticamente após o sucesso
+            onPress: () => router.back() 
           }
         ]
       );

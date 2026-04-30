@@ -1,23 +1,21 @@
-// bug-busters-f/prodesk-appmobile/ProDesk-appMobile-feat-recuperacao-senha/frontend/src/app/(auth)/resetPassword.tsx
-
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
-
-// Bibliotecas de validação seguindo o padrão do projeto
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
-// Definição do Schema de validação com Yup
 const schema = yup.object({
-  password: yup
-    .string()
-    .min(6, 'A senha deve ter pelo menos 6 caracteres')
-    .required('A senha é obrigatória'),
+  password: yup.string()
+    .required('A senha temporária é obrigatória')
+    .min(8, 'A senha deve ter no mínimo 8 caracteres')
+    .matches(/[A-Z]/, 'A senha deve ter pelo menos 1 letra maiúscula')
+    .matches(/[a-z]/, 'A senha deve ter pelo menos 1 letra minúscula')
+    .matches(/[0-9]/, 'A senha deve ter pelo menos 1 número')
+    .matches(/[\W_]/, 'A senha deve ter pelo menos 1 caractere especial'),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref('password')], 'As senhas não coincidem')
@@ -31,12 +29,9 @@ export default function ResetPassword() {
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Estados para visibilidade da senha
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Configuração do formulário
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: yupResolver(schema),
     defaultValues: {

@@ -11,18 +11,43 @@ export default function ClientProfile() {
   const [image, setImage] = useState<string | null>(null);
   const [hasImage, setHasImage] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const imageKeyRef = useRef(0);
 
   useEffect(() => {
     if (user?.id) {
       imageKeyRef.current += 1;
-      const currentKey = imageKeyRef.current;
-      const url = `${api.defaults.baseURL}/files/profile/${user.id}?${new Date().getTime()}`;
-      setImage(url);
+      setImage(`${api.defaults.baseURL}/files/profile/${user.id}?${new Date().getTime()}`);
       setHasImage(false);
+      fetchUserData(); 
     }
-  }, [user]);
+  }, [user?.id]);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await api.get(`/user/${user?.id}`); 
+      
+      if (response.data) {
+        if (response.data.company) {
+          setCompanyName(response.data.company.name || (typeof response.data.company === 'string' ? response.data.company : null));
+        }
+        
+        if (setUser && user) {
+          setUser({
+            ...user,
+            name: response.data.name || user.name,
+            email: response.data.email || user.email,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados do usuário:", error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   const handlePickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -163,7 +188,6 @@ export default function ClientProfile() {
               )}
             </View>
             
-            {/* Botão Flutuante para Alterar */}
             <TouchableOpacity 
               onPress={handlePickImage}
               className='absolute bottom-0 right-0 bg-orange-500 p-2 rounded-full border-2 border-white dark:border-stone-900'
@@ -191,14 +215,39 @@ export default function ClientProfile() {
           <View className='gap-y-4'>
             <View>
               <Text className='text-gray-500 dark:text-gray-400 text-sm'>Nome</Text>
-              <Text className='text-lg font-semibold text-stone-900 dark:text-white'>{user?.name || 'Usuário Cliente'}</Text>
+              {isLoadingData ? (
+                <ActivityIndicator size="small" color="#f97316" className='self-start mt-1' />
+              ) : (
+                <Text className='text-lg font-semibold text-stone-900 dark:text-white'>
+                  {user?.name || 'Usuário'}
+                </Text>
+              )}
             </View>
 
             <View className='h-[1px] bg-stone-100 dark:bg-stone-800' />
 
             <View>
               <Text className='text-gray-500 dark:text-gray-400 text-sm'>E-mail</Text>
-              <Text className='text-lg font-semibold text-stone-900 dark:text-white'>{user?.email || 'email@exemplo.com'}</Text>
+              {isLoadingData ? (
+                <ActivityIndicator size="small" color="#f97316" className='self-start mt-1' />
+              ) : (
+                <Text className='text-lg font-semibold text-stone-900 dark:text-white'>
+                  {user?.email || 'email@exemplo.com'}
+                </Text>
+              )}
+            </View>
+
+            <View className='h-[1px] bg-stone-100 dark:bg-stone-800' />
+
+            <View>
+              <Text className='text-gray-500 dark:text-gray-400 text-sm'>Empresa</Text>
+              {isLoadingData ? (
+                <ActivityIndicator size="small" color="#f97316" className='self-start mt-1' />
+              ) : (
+                <Text className='text-lg font-semibold text-stone-900 dark:text-white'>
+                  {companyName || 'Empresa não informada'}
+                </Text>
+              )}
             </View>
           </View>
         </View>
