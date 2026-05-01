@@ -47,10 +47,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
         try {
             const response = await api.post('/auth/login', { email, password})
 
-            console.log('response.data:', response.data)      
-            console.log('token:', response.data?.token)        
-            console.log('tipo do token:', typeof response.data?.token)
-
             const { token } = response.data
 
             const decoded: any = jwtDecode(token)

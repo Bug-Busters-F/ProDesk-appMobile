@@ -2,7 +2,6 @@ import { View, Text, TouchableOpacity, LayoutAnimation, Platform, UIManager } fr
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
 
-// Habilita animação de layout no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }

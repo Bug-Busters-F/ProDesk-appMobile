@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import api from '@/services/api';
 
 const faqValidationSchema = yup.object().shape({
     question: yup
@@ -29,11 +30,12 @@ export default function RegisterFaqForm() {
     const handleRegister = async (faqData: { question: string, answer: string }) => {
         setIsSubmitting(true);
         try {
-            console.log("FAQ CADASTRADO: ", faqData);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await api.post('/faqs', faqData);
 
+            Alert.alert("Sucesso", "FAQ cadastrada com sucesso!");
             router.replace('/(admin)/faqManagement');
         } catch (error: any) {
+            console.error("Erro ao cadastrar FAQ:", error);
             Alert.alert("Erro", "Não foi possível cadastrar a pergunta. Tente novamente.");
         } finally {
             setIsSubmitting(false);
