@@ -7,6 +7,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { useRouter } from "expo-router";
 import api from "@/services/api";
 import { useEffect, useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
 
 const userRegisterValidationSchema = yup.object().shape({
     name: yup.string().required('O nome completo é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres'),
@@ -36,6 +37,7 @@ export default function RegisterUserForm () {
     const router = useRouter()
     const [companyList, setCompanyList] = useState<{ label: string, value:string}[]> ([])
     const [categoryList, setCategoryList] = useState<{ id: string, name:string}[]> ([])
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         async function fetchData() {
@@ -114,7 +116,7 @@ export default function RegisterUserForm () {
                     name="name"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.name ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite o nome completo"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -138,7 +140,7 @@ export default function RegisterUserForm () {
                     name="email"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.email ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite o email"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -163,7 +165,7 @@ export default function RegisterUserForm () {
                     control={control}
                     name="userType"
                     render={({ field: { onChange, value } }) => (
-                        <View className="border border-gray-400 rounded-lg h-16 justify-center focus:border-orange-700">
+                        <View className={`border rounded-lg h-16 focus:border-orange-700 justify-center ${errors.userType ? 'border-red-500' : 'border-gray-400'}`}>
                             <RNPickerSelect
                                 onValueChange={(itemValue) => {
                                     onChange(itemValue);
@@ -244,7 +246,7 @@ export default function RegisterUserForm () {
                         control={control}
                         name="companyId"
                         render={({ field: { onChange, value } }) => (
-                            <View className="border border-gray-400 rounded-lg h-16 justify-center focus:border-orange-700">
+                            <View className={`border rounded-lg h-16 focus:border-orange-700 justify-center ${errors.companyId ? 'border-red-500' : 'border-gray-400'}`}>
                                 <RNPickerSelect
                                     onValueChange={(itemValue) => {
                                         onChange(itemValue);
@@ -269,7 +271,7 @@ export default function RegisterUserForm () {
                 </View>
             )}
             
-            {/* Campo Senha Temporaria */}
+            {/* Campo Senha Temporaria com Ícone */}
             <View className="mb-8">
                 <Text className="mb-1">
                     Senha Temporária
@@ -278,17 +280,30 @@ export default function RegisterUserForm () {
                     control={control}
                     name="temporaryPassword"
                     render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
-                            placeholder="Digite a senha temporária"
-                            onBlur={onBlur}
-                            onChangeText={(text) => {
-                                onChange(text)
-                                clearErrors("temporaryPassword")
-                            }}
-                            value={value}
-                            autoCapitalize="none"
-                        />
+                        <View className="relative justify-center">
+                            <TextInput 
+                                className={`border rounded-lg pl-2 pr-12 h-16 focus:border-orange-700 ${errors.temporaryPassword ? 'border-red-500' : 'border-gray-400'}`}
+                                placeholder="Digite a senha temporária"
+                                onBlur={onBlur}
+                                onChangeText={(text) => {
+                                    onChange(text)
+                                    clearErrors("temporaryPassword")
+                                }}
+                                value={value}
+                                autoCapitalize="none"
+                                secureTextEntry={!showPassword}
+                            />
+                            <TouchableOpacity 
+                                className="absolute right-4" 
+                                onPress={() => setShowPassword(!showPassword)}
+                            >
+                                <Ionicons 
+                                    name={showPassword ? "eye-off" : "eye"} 
+                                    size={22} 
+                                    color="#6b7280" 
+                                />
+                            </TouchableOpacity>
+                        </View>
                     )}
                 />
                 {errors.temporaryPassword && <Text className="text-xs text-red-500 mt-1">{errors.temporaryPassword.message}</Text>}

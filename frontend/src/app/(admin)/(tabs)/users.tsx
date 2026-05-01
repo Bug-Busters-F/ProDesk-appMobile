@@ -23,12 +23,12 @@ export default function Users () {
     const [focused, setFocused] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
-
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+
+    const [photoRefreshToken, setPhotoRefreshToken] = useState(0);
 
     const fetchUsers = async (pageNumber: number = 1) => {
         try {
@@ -55,7 +55,8 @@ export default function Users () {
 
     useFocusEffect(
         useCallback(() => {
-            fetchUsers(1); 
+            fetchUsers(1);
+            setPhotoRefreshToken(prev => prev + 1);
         }, [])
     )
 
@@ -99,7 +100,7 @@ export default function Users () {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row items-center justify-between mb-6">
                     <View>
-                        <Text className="text-2xl font-bold text-slate-900">Controle de Usuários</Text>
+                        <Text className="text-2xl font-bold text-slate-900 mb-2">Controle de Usuários</Text>
                         <Text className="text-slate-500">Gerencie os usuários do sistema</Text>
                     </View>
                     <TouchableOpacity
@@ -144,15 +145,18 @@ export default function Users () {
                     users?.map(user => {
                         const safeRole = user.role?.toLowerCase();
                         const translatedRole = roleNames[safeRole] || user.role;
+                        const userId = user.id || (user._id as string);
 
                         return (
                             <UserCard
-                                key={user.id || user._id}
+                                key={userId}
+                                userId={userId}
                                 name={user.name}
                                 email={user.email}
                                 role={translatedRole}
+                                refreshToken={photoRefreshToken}
                                 onEdit={() => handleEdit(user)}
-                                onDelete={() => handleDelete(user.id || (user._id as string), user.name)}
+                                onDelete={() => handleDelete(userId, user.name)}
                             />
                         )
                     })
@@ -166,7 +170,6 @@ export default function Users () {
 
                 {!loading && totalPages > 0 && (
                 <View className="mt-6 mb-16 items-center gap-3">
-                    {/* Indicador de páginas com bolinhas */}
                     <View className="flex-row items-center gap-1.5 mb-1">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                             <TouchableOpacity
@@ -181,12 +184,10 @@ export default function Users () {
                         ))}
                     </View>
 
-                    {/* Texto da página atual */}
                     <Text className="text-xs text-slate-400 font-medium tracking-wide">
                         Página <Text className="text-orange-500 font-bold">{page}</Text> de {totalPages}
                     </Text>
 
-                    {/* Botões anterior / próxima */}
                     <View className="flex-row items-center gap-3">
                         <TouchableOpacity
                             disabled={page === 1}

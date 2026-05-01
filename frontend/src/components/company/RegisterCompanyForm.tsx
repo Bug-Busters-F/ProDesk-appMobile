@@ -1,10 +1,13 @@
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TextInput, TouchableOpacity, View, Image } from "react-native";
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup' 
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRouter } from "expo-router";
 import api from "@/services/api";
+import { useState } from "react";
+import * as ImagePicker from 'expo-image-picker';
+import { Feather } from "@expo/vector-icons";
 
 const userRegisterValidationSchema = yup.object().shape({
     name: yup
@@ -16,44 +19,84 @@ const userRegisterValidationSchema = yup.object().shape({
         .required('CNPJ da empresa é obrigatório')
         .min(14, 'O CNPJ deve ter exatamente 14 digitos')
         .max(14, 'O CNPJ deve ter exatamente 14 digitos')
-    })
+})
     
 export default function RegisterCompanyForm () {
     const router = useRouter()
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     
-        const { control, handleSubmit, clearErrors, formState: {errors } } = useForm({
-                resolver: yupResolver(userRegisterValidationSchema),
-                mode: 'onSubmit'
-            })
-        
-        const handleRegister = async (companyData: { name: string, cnpj: string }) => {
-            try {
-                const cleanCnpj = companyData.cnpj.replace(/\D/g, '')
+    const { control, handleSubmit, clearErrors, formState: {errors } } = useForm({
+        resolver: yupResolver(userRegisterValidationSchema),
+        mode: 'onSubmit'
+    })
 
-                const response = await api.post('/company', {
-                    name: companyData.name,
-                    cnpj: cleanCnpj
-                })
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+        });
 
-                console.log("EMPRESA CADASTRADA: ", response.data)
-                router.replace('/(admin)/(tabs)/companies')
-            } catch (error: any) {
-                Alert.alert("Erro, não foi possivel cadastrar a empresa. Verifique se o cnpj ja esta registrado.")
-            }
+        if (!result.canceled) {
+            setSelectedImage(result.assets[0].uri);
         }
+    };
+        
+    const handleRegister = async (companyData: { name: string, cnpj: string }) => {
+        try {
+            const cleanCnpj = companyData.cnpj.replace(/\D/g, '')
+
+            const response = await api.post('/company', {
+                name: companyData.name,
+                cnpj: cleanCnpj
+            })
+
+            const companyId = response.data.id || response.data._id;
+
+            if (selectedImage && companyId) {
+                const formData = new FormData();
+                formData.append('file', {
+                    uri: selectedImage,
+                    name: 'logo.jpg',
+                    type: 'image/jpeg'
+                } as any);
+
+                await api.post(`/files/company/${companyId}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+            }
+
+            console.log("EMPRESA CADASTRADA: ", response.data)
+            router.replace('/(admin)/(tabs)/companies')
+        } catch (error: any) {
+            Alert.alert("Erro", "Não foi possivel cadastrar a empresa. Verifique se o cnpj ja esta registrado.")
+        }
+    }
+
     return(
-        <KeyboardAwareScrollView>
+        <KeyboardAwareScrollView showsVerticalScrollIndicator={false}>
+            {/* Foto de Perfil da Empresa */}
+            <TouchableOpacity 
+                onPress={pickImage} 
+                className="self-center mb-6 w-24 h-24 rounded-full bg-gray-200 justify-center items-center overflow-hidden border border-gray-300"
+            >
+                {selectedImage ? (
+                    <Image source={{ uri: selectedImage }} className="w-full h-full" />
+                ) : (
+                    <Feather name="camera" size={32} color="#9ca3af" />
+                )}
+            </TouchableOpacity>
+
             {/* Campo Nome */}
             <View className="mb-5">
-                <Text className="mb-1">
-                    Nome
-                </Text>
+                <Text className="mb-1">Nome</Text>
                 <Controller
                     control={control}
                     name="name"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.name ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite o nome da empresa"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -69,15 +112,13 @@ export default function RegisterCompanyForm () {
 
             {/* Campo CNPJ */}
             <View className="mb-5">
-                <Text className="mb-1">
-                    CNPJ
-                </Text>
+                <Text className="mb-1">CNPJ</Text>
                 <Controller
                     control={control}
                     name="cnpj"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.cnpj ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite apenas os números"
                             onBlur={onBlur}
                             onChangeText={(text) => {

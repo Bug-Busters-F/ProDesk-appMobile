@@ -80,7 +80,7 @@ export default function RegisterCategoryForm() {
                     name="name"
                     render={({ field: { onChange, onBlur, value } }) => (
                         <TextInput 
-                            className="border border-gray-400 rounded-lg px-2 h-16 focus:border-orange-700"
+                            className={`border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.name ? 'border-red-500' : 'border-gray-400'}`}
                             placeholder="Digite o nome da categoria"
                             onBlur={onBlur}
                             onChangeText={(text) => {
@@ -101,7 +101,7 @@ export default function RegisterCategoryForm() {
                 </Text>
                 <View className="flex-row mb-2">
                     <TextInput 
-                        className="flex-1 border border-gray-400 rounded-l-lg px-2 h-16 focus:border-orange-700"
+                        className={`flex-1 border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.keywords ? 'border-red-500' : 'border-gray-400'}`}
                         placeholder="Ex: site, app, login"
                         value={keywordInput}
                         onChangeText={setKeywordInput}
@@ -136,7 +136,7 @@ export default function RegisterCategoryForm() {
                 </Text>
                 <View className="flex-row mb-2">
                     <TextInput 
-                        className="flex-1 border border-gray-400 rounded-l-lg px-2 h-16 focus:border-orange-700"
+                        className={`flex-1 border rounded-lg px-2 h-16 focus:border-orange-700 ${errors.trainingPhrases ? 'border-red-500' : 'border-gray-400'}`}
                         placeholder="Ex: o site não abre"
                         value={phraseInput}
                         onChangeText={setPhraseInput}

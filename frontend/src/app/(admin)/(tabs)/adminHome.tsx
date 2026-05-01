@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, FlatList, ScrollView } from "react-native";
+import { View, Text, FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 const recentTickets = [
   {
@@ -31,9 +32,11 @@ const recentTickets = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+
   return (
     <SafeAreaView className="flex-1 bg-[#F3F4F6]">
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false}>
 
         <View className="flex-1 px-6 pt-5">
 
@@ -98,6 +101,42 @@ export default function Home() {
             </View>
           </View>
 
+          {/* Acesso Rápido */}
+          <Text className="text-lg font-bold text-gray-800 mb-4">
+            Acesso Rápido
+          </Text>
+          <View className="flex-row justify-between mb-6">
+            <TouchableOpacity 
+              className="bg-white p-4 rounded-2xl items-center flex-1 mr-2 shadow-sm"
+              onPress={() => router.push('/(admin)/faqManagement')}
+            >
+              <View className="w-12 h-12 rounded-full bg-orange-100 items-center justify-center mb-2">
+                <MaterialIcons name="help-outline" size={24} color="#F97316" />
+              </View>
+              <Text className="text-xs font-semibold text-gray-700 text-center">Gerenciar FAQ</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              className="bg-white p-4 rounded-2xl items-center flex-1 mx-1 shadow-sm"
+              onPress={() => router.push('/(admin)/registerUser')}
+            >
+              <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mb-2">
+                <MaterialIcons name="person-add" size={24} color="#3B82F6" />
+              </View>
+              <Text className="text-xs font-semibold text-gray-700 text-center">Novo Usuário</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              className="bg-white p-4 rounded-2xl items-center flex-1 ml-2 shadow-sm"
+              onPress={() => router.push('/(admin)/registerCompany')}
+            >
+              <View className="w-12 h-12 rounded-full bg-green-100 items-center justify-center mb-2">
+                <MaterialIcons name="business" size={24} color="#10B981" />
+              </View>
+              <Text className="text-xs font-semibold text-gray-700 text-center">Nova Empresa</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Chamados por setor */}
           <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
             <View className="flex-row justify-between mb-4">
@@ -105,7 +144,7 @@ export default function Home() {
                 Chamados por Setor
               </Text>
               <Text className="text-gray-400 text-sm">
-                últimos 30 diasa
+                últimos 30 dias
               </Text>
             </View>
 
@@ -125,7 +164,7 @@ export default function Home() {
             </Text>
 
             {/* Barra proporcional */}
-            <View className="h-3 w-full bg-gray-200 overflow-hidden flex-row mb-5">
+            <View className="h-3 w-full bg-gray-200 overflow-hidden flex-row mb-5 rounded-full">
               <View className="w-[70%] bg-orange-400" />
               <View className="w-[25%] bg-green-400" />
               <View className="w-[5%] bg-red-400" />
@@ -134,7 +173,7 @@ export default function Home() {
             {/* Legenda */}
             <View className="space-y-2">
               
-              <View className="flex-row justify-between items-center">
+              <View className="flex-row justify-between items-center mb-2">
                 <View className="flex-row items-center">
                   <View className="w-3 h-3 rounded-full bg-orange-400 mr-2" />
                   <Text className="text-gray-600">Em Aberto</Text>
@@ -142,7 +181,7 @@ export default function Home() {
                 <Text className="font-semibold text-gray-800">70%</Text>
               </View>
 
-              <View className="flex-row justify-between items-center">
+              <View className="flex-row justify-between items-center mb-2">
                 <View className="flex-row items-center">
                   <View className="w-3 h-3 rounded-full bg-green-400 mr-2" />
                   <Text className="text-gray-600">Resolvidos</Text>
@@ -166,9 +205,11 @@ export default function Home() {
             <Text className="text-gray-800 font-bold text-lg">
               Chamados Recentes
             </Text>
-            <Text className="text-orange-500 font-semibold">
-              Ver todos
-            </Text>
+            <TouchableOpacity>
+              <Text className="text-orange-500 font-semibold">
+                Ver todos
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <FlatList
@@ -185,6 +226,7 @@ export default function Home() {
                     style={{ backgroundColor: `${item.color}20` }}
                   >
                     <MaterialIcons
+                      name={item.icon as any}
                       size={22}
                       color={item.color}
                     />
@@ -200,7 +242,7 @@ export default function Home() {
                   </View>
                 </View>
 
-                <View className="bg-gray-100 px-3 py-1 rounded-full">
+                <View className="bg-gray-100 px-3 py-1 rounded-full ml-2">
                   <Text
                     className="text-xs font-bold"
                     style={{ color: item.color }}
@@ -211,6 +253,7 @@ export default function Home() {
               </View>
             )}
           />
+          <View className="h-10" />
         </View>
       </ScrollView>
     </SafeAreaView>
