@@ -53,6 +53,13 @@ export default function AgentTickets() {
     return true;
   });
 
+  const handleOpenDetails = (ticketId: string) => {
+    router.push({
+      pathname: '/(agent)/ticket/details/[id]',
+      params: { id: ticketId }
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-stone-50" edges={['top']}>
       <View className="px-6 pt-4 pb-2 flex-row justify-between items-center">
@@ -107,30 +114,7 @@ export default function AgentTickets() {
                   description: description,
                   status: mapStatusToUI(status)
                 }} 
-                onPress={async () => {
-                try {
-                  const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticketId}`);
-                  if (!res.ok) {
-                    Alert.alert('Aviso', 'O chat deste chamado ainda não foi criado.');
-                    return; 
-                  }
-
-                  const chatData = await res.json();
-                  const chatId = chatData?.id || chatData?._id;
-                  
-                  if (chatId) {
-                    router.push({
-                      pathname: '/(client)/ticket/[id]',
-                      params: { id: chatId }
-                    });
-                  } else {
-                    Alert.alert('Aviso', 'O chat deste chamado não possui ID válido.');
-                  }
-                } catch (e) {
-                  console.error(e);
-                  Alert.alert('Erro', 'Falha ao conectar na sala do chamado.');
-                }
-              }}
+                onPress={() => handleOpenDetails(ticketId)}
               />
             )
           })
