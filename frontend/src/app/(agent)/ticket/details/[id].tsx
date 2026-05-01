@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Image, Modal, Pressable } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Image, Modal, Pressable, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,6 +19,10 @@ export default function TicketDetails() {
   const [loading, setLoading] = useState(true);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showEscalateModal, setShowEscalateModal] = useState(false);
+  const [escalateReason, setEscalateReason] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
 
   const fetchTicket = async () => {
     try {
@@ -45,8 +49,18 @@ export default function TicketDetails() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get('/category'); 
+      setCategories(res.data);
+    } catch (e) {
+      console.log('Erro ao buscar categorias', e);
+    }
+  };
+
   useEffect(() => {
     fetchTicket();
+    fetchCategories(); 
   }, []);
 
   const handleAssignAgent = async () => {
@@ -98,8 +112,44 @@ export default function TicketDetails() {
     }
   };
 
-  const handleEscalate = () => {
-    Alert.alert('Escalonar', 'Implementar lógica de escalonamento aqui');
+  const handleOpenEscalateModal = () => {
+    if (ticket?.status !== 'IN_PROGRESS') {
+       Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
+       return;
+    }
+    setShowEscalateModal(true);
+  };
+
+  const confirmEscalation = async () => {
+    if (!selectedCategory) {
+      Alert.alert('Aviso', 'Por favor, selecione um setor/categoria de destino.');
+      return;
+    }
+    if (!escalateReason.trim()) {
+      Alert.alert('Aviso', 'Por favor, descreva o que já foi feito.');
+      return;
+    }
+
+    try {
+      await api.put(`/tickets/${id}/escalate`, {
+        groupId: selectedCategory.id || 'UUID_PADRAO_DO_GRUPO', 
+        category: selectedCategory.name,
+        whatWasDone: escalateReason,
+      });
+
+      setShowEscalateModal(false);
+      setEscalateReason('');
+      Alert.alert('Sucesso', 'Chamado escalonado com sucesso!');
+      fetchTicket();
+
+    } catch (error: any) {
+      const apiMessage = error?.response?.data?.message;
+      const errorMessage = Array.isArray(apiMessage) 
+        ? apiMessage.join('\n') 
+        : (apiMessage || 'Falha ao escalonar chamado.');
+
+      Alert.alert('Erro de Validação', errorMessage);
+    }
   };
 
   const handleChangeStatus = () => {
@@ -222,7 +272,7 @@ export default function TicketDetails() {
         {/* BOTÕES */}
         <View className="px-6 pb-10">
 
-          {ticket.status === 'OPEN' ? (
+          {ticket.status === 'OPEN' || !ticket.agentId ? (
             <TouchableOpacity
               onPress={handleAssignAgent}
               className="bg-orange-500 py-4 rounded-2xl flex-row justify-center items-center mb-4"
@@ -268,7 +318,7 @@ export default function TicketDetails() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={handleEscalate}
+            onPress={handleOpenEscalateModal}
             className="bg-transparent border-2 border-red-500 py-4 rounded-2xl flex-row justify-center items-center"
           >
             <Text className="text-red-500 font-extrabold text-lg mr-2">!</Text>
@@ -280,6 +330,82 @@ export default function TicketDetails() {
         </View>
 
       </ScrollView>
+
+      <Modal
+        visible={showEscalateModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEscalateModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white pt-4 pb-8 px-6 rounded-t-3xl shadow-2xl">
+            
+            {/* Tracinho de arrastar */}
+            <View className="items-center mb-6">
+              <View className="w-12 h-1.5 bg-gray-200 rounded-full" />
+            </View>
+
+            <Text className="text-xl font-bold text-slate-800 mb-4">
+              Escalonar Chamado
+            </Text>
+
+            {/* SELEÇÃO DE DESTINO (SETOR/CATEGORIA) */}
+            <Text className="text-slate-500 font-medium mb-2 text-sm">
+              Para qual setor deseja enviar?
+            </Text>
+            <View className="flex-row flex-wrap mb-4">
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  onPress={() => setSelectedCategory(cat)}
+                  className={`px-4 py-2 rounded-xl border mr-2 mb-2 ${
+                    selectedCategory?.id === cat.id 
+                      ? 'bg-orange-50 border-orange-500' 
+                      : 'bg-white border-gray-200'
+                  }`}
+                >
+                  <Text className={selectedCategory?.id === cat.id ? 'text-orange-600 font-bold' : 'text-slate-600'}>
+                    {cat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* CAMPO DE TEXTO: O QUE FOI FEITO */}
+            <Text className="text-slate-500 font-medium mb-2 text-sm">
+              Descreva o que já foi tentado:
+            </Text>
+            <TextInput
+              className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-slate-700 mb-6 h-32"
+              placeholder="Ex: Reiniciei o servidor, mas o erro de timeout persiste..."
+              placeholderTextColor="#94a3b8"
+              multiline
+              textAlignVertical="top"
+              value={escalateReason}
+              onChangeText={setEscalateReason}
+            />
+
+            {/* BOTÕES DE AÇÃO */}
+            <View className="flex-row justify-between">
+              <TouchableOpacity
+                onPress={() => setShowEscalateModal(false)}
+                className="flex-1 bg-gray-100 py-4 rounded-xl items-center mr-2"
+              >
+                <Text className="text-slate-500 font-bold text-base">Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmEscalation}
+                className="flex-1 bg-red-500 py-4 rounded-xl items-center ml-2 flex-row justify-center"
+              >
+                <Feather name="corner-up-right" size={18} color="white" className="mr-2" />
+                <Text className="text-white font-bold text-base ml-1">Escalonar</Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={isMenuVisible}
