@@ -1,20 +1,44 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AdminFaqCard from '@/components/faq/AdminFaqCard';
+import api from '@/services/api';
+import EditFaqModal from '@/components/faq/EditFaqModal';
 
-const INITIAL_MOCK = [
-    { id: '1', question: 'Como faço para redefinir minha senha?', answer: 'Na tela de login, clique em "Esqueci minha senha".' },
-    { id: '2', question: 'Qual o tempo de resposta dos chamados?', answer: 'O tempo de resposta varia conforme a gravidade. Até 2h para críticos.' },
-];
+interface Faq {
+    _id?: string;
+    id?: string;
+    question: string;
+    answer: string;
+}
 
 export default function FaqManagement() {
     const router = useRouter();
     const [focused, setFocused] = useState(false);
     const [search, setSearch] = useState("");
-    const [faqs, setFaqs] = useState(INITIAL_MOCK); 
+    const [faqs, setFaqs] = useState<Faq[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [selectedFaq, setSelectedFaq] = useState<Faq | null>(null);
+
+   const fetchFaqs = async () => {
+        setIsLoading(true); 
+        try {
+            const response = await api.get('/faqs');
+            setFaqs(response.data);
+        } catch (error) {
+            console.error("Erro ao buscar FAQs:", error);
+            Alert.alert("Erro", "Não foi possível carregar as perguntas.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchFaqs();
+    }, []);
 
     const handleDelete = (id: string, question: string) => {
         Alert.alert(
@@ -25,24 +49,31 @@ export default function FaqManagement() {
                 {
                     text: "Excluir",
                     style: "destructive",
-                    onPress: () => {
-                        setFaqs(prev => prev.filter(f => f.id !== id));
-                        Alert.alert("Sucesso", "Pergunta removida do sistema.");
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/faqs/${id}`);
+                            
+                            setFaqs(prev => prev.filter(f => (f._id || f.id) !== id));
+                            Alert.alert("Sucesso", "Pergunta removida do sistema.");
+                        } catch (error) {
+                            console.error("Erro ao excluir FAQ:", error);
+                            Alert.alert("Erro", "Não foi possível excluir a pergunta.");
+                        }
                     }
                 }
             ]
         );
     }
 
-    const handleEdit = (faq: any) => {
-        Alert.alert("Editar", `Abrindo modal para editar: ${faq.question}`);
-    }
+    const handleEdit = (faq: Faq) => {
+        setSelectedFaq(faq);
+        setIsEditModalVisible(true);
+    };
 
-    const handleAdd = () => {
-        Alert.alert("Nova Pergunta", "Aqui abrirá a tela/modal de criação de nova pergunta do FAQ.");
-    }
-
-    const filteredFaqs = faqs.filter(f => f.question.toLowerCase().includes(search.toLowerCase()));
+    const filteredFaqs = faqs.filter(f => 
+        f.question?.toLowerCase().includes(search.toLowerCase()) || 
+        f.answer?.toLowerCase().includes(search.toLowerCase())
+    );
 
     return (
         <SafeAreaView className="flex-1 px-4 bg-stone-50 mt-6">
@@ -90,15 +121,20 @@ export default function FaqManagement() {
                         onChangeText={setSearch}
                     />
                 </View>
-
-                {filteredFaqs.length > 0 ? (
+                
+                {isLoading ? (
+                    <View className="items-center justify-center mt-10">
+                        <ActivityIndicator size="large" color="#F97316" />
+                        <Text className="text-slate-400 mt-4">Carregando perguntas...</Text>
+                    </View>
+                ) : filteredFaqs.length > 0 ? (
                     filteredFaqs.map(faq => (
                         <AdminFaqCard
-                            key={faq.id}
+                            key={faq._id || faq.id}
                             question={faq.question}
                             answerPreview={faq.answer}
                             onEdit={() => handleEdit(faq)}
-                            onDelete={() => handleDelete(faq.id, faq.question)}
+                            onDelete={() => handleDelete(faq._id || faq.id as string, faq.question)}
                         />
                     ))
                 ) : (
@@ -110,6 +146,18 @@ export default function FaqManagement() {
                 
                 <View className="h-10" />
             </ScrollView>
+
+            <EditFaqModal 
+                visible={isEditModalVisible}
+                faq={selectedFaq}
+                onClose={() => {
+                    setIsEditModalVisible(false);
+                    setSelectedFaq(null);
+                }}
+                onSuccess={() => {
+                    fetchFaqs()
+                }}
+            />
         </SafeAreaView>
     );
 }
