@@ -52,12 +52,10 @@ export default function RegisterAccess() {
     } catch (error: any) {
       console.error('Erro ao solicitar acesso:', error);
       
-      // Captura a mensagem de erro vinda do backend (NestJS)
       let errorMessage = 'Não foi possível enviar sua solicitação. Tente novamente mais tarde.';
       
       if (error.response && error.response.data && error.response.data.message) {
         const backendMessage = error.response.data.message;
-        // O NestJS pode retornar um array de strings (erros de validação) ou uma string direta
         errorMessage = Array.isArray(backendMessage) ? backendMessage[0] : backendMessage;
       }
 

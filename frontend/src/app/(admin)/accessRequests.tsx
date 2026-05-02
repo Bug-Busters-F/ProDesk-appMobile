@@ -18,11 +18,7 @@ export default function AccessRequests() {
     const router = useRouter();
     const [requests, setRequests] = useState<RequestModel[]>([]);
     const [loading, setLoading] = useState(true);
-    
-    // Controle de requisição em andamento por card
     const [actionState, setActionState] = useState<{ id: string, type: 'approve' | 'reject' } | null>(null);
-
-    // Sistema de paginação idêntico ao users.tsx
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -60,7 +56,7 @@ export default function AccessRequests() {
         try {
             await api.patch(`/user/approve/${id}`);
             Alert.alert("Sucesso", "Solicitação aprovada com sucesso!");
-            fetchRequests(page); // Atualiza a página atual mantendo a posição
+            fetchRequests(page); 
         } catch (error) {
             console.error("Erro ao aprovar", error);
             Alert.alert("Erro", "Não foi possível aprovar a solicitação.");
