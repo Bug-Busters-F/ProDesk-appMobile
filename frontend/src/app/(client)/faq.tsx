@@ -41,7 +41,7 @@ export default function ClientFaq() {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
+        <SafeAreaView className="flex-1 bg-stone-50">
             <View className="flex-1 px-6 pt-4">
                 <View className="flex-row items-center mb-8">
                     <TouchableOpacity onPress={() => router.back()} disabled={isLoading}>

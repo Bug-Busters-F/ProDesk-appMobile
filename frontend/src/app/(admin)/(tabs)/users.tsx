@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router'; 
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import UserCard from '@/components/user/UserCard';
 import api from '@/services/api';
@@ -138,6 +138,22 @@ export default function Users () {
                         onBlur={() => setFocused(false)}
                     />
                 </View>
+
+                <TouchableOpacity 
+                    onPress={() => router.push('/(admin)/accessRequests')}
+                    className="flex-row items-center justify-between bg-slate-50 border border-slate-100 p-4 rounded-2xl mb-6"
+                >
+                    <View className="flex-row items-center">
+                        <View className="w-10 h-10 bg-orange-100 rounded-full items-center justify-center mr-3">
+                            <MaterialCommunityIcons name="account-clock" size={20} color="#f97316" />
+                        </View>
+                        <View>
+                            <Text className="font-bold text-slate-800">Solicitações de Acesso</Text>
+                            <Text className="text-xs text-slate-400">Ver pedidos pendentes</Text>
+                        </View>
+                    </View>
+                    <Feather name="chevron-right" size={20} color="#CBD5E1" />
+                </TouchableOpacity>
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#F97316" className='mt-10' />
