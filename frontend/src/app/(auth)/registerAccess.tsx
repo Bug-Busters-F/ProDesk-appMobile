@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import api from '@/services/api';
 
 const schema = yup.object({
   name: yup
@@ -26,7 +27,7 @@ export default function RegisterAccess() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     resolver: yupResolver(schema),
     defaultValues: {
       name: '',
@@ -39,15 +40,26 @@ export default function RegisterAccess() {
     setIsLoading(true);
 
     try {
-
+      await api.post('/user/requestAccess', data);
       Alert.alert(
         'Solicitação Enviada',
         'Sua solicitação de acesso foi recebida. Nossa equipe entrará em contato em breve.',
-        [{ text: 'OK', onPress: () => router.back() }]
+        [{ text: 'OK', onPress: () => {
+            reset();
+            router.back();
+        }}]
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao solicitar acesso:', error);
-      Alert.alert('Erro', 'Não foi possível enviar sua solicitação. Tente novamente mais tarde.');
+      
+      let errorMessage = 'Não foi possível enviar sua solicitação. Tente novamente mais tarde.';
+      
+      if (error.response && error.response.data && error.response.data.message) {
+        const backendMessage = error.response.data.message;
+        errorMessage = Array.isArray(backendMessage) ? backendMessage[0] : backendMessage;
+      }
+
+      Alert.alert('Atenção', errorMessage);
     } finally {
       setIsLoading(false);
     }

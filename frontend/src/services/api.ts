@@ -38,4 +38,21 @@ export const uploadFile = async (fileUri: string, fileName: string) => {
     return `${serverUrl}${filePath}`; 
 };
 
+export const requestAccess = async (data: { name: string; email: string; cnpj: string }) => {
+    return await api.post('/user/requestAccess', data);
+};
+
+export const getAccessRequests = async () => {
+    const response = await api.get('/user/requests');
+    return response.data;
+};
+
+export const approveRequest = async (id: string) => {
+    return await api.patch(`/user/approve/${id}`);
+};
+
+export const rejectRequest = async (id: string) => {
+    return await api.patch(`/user/reject/${id}`);
+};
+
 export default api
