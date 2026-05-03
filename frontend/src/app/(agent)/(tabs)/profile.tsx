@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -76,36 +76,44 @@ export default function AgentProfile() {
 
   const uploadImage = async (uri: string) => {
     setIsUploading(true);
-
     imageKeyRef.current += 1;
 
-    const formData = new FormData();
-    const uriParts = uri.split('.');
-    const fileType = uriParts[uriParts.length - 1] || 'jpeg'; 
-    formData.append('file', { 
-      uri,
-      name: `profile-${user?.id}.${fileType}`,
-      type: `image/${fileType}`,
-    } as any);
-
     try {
-      const response = await api.post('/files/profile', formData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data',
-          Accept: 'application/json',
+      const formData = new FormData();
+      const isPng = uri.toLowerCase().endsWith('.png');
+      const mimeType = isPng ? 'image/png' : 'image/jpeg';
+      const fileName = `profile-${user?.id}.${isPng ? 'png' : 'jpg'}`;
+
+      formData.append('file', {
+        uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+        name: fileName,
+        type: mimeType,
+      } as any);
+
+      const response = await fetch(`${api.defaults.baseURL}/files/profile`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${user?.token}`, 
         },
       });
+
+      if (!response.ok) {
+         throw new Error(`Falha no upload. Status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
 
       setImage(uri);
       setHasImage(true);
       
-      if (response.data && setUser && user) {
-        setUser({ ...user, profileImage: response.data.path || uri });
+      if (setUser && user) {
+        setUser({ ...user, profileImage: responseData.path || uri });
       }
       
       Alert.alert("Sucesso", "Foto de perfil atualizada!");
     } catch (error: any) {
-      console.error("Erro no upload:", error.response?.data || error.message);
+      console.log("ERRO REAL NO UPLOAD:", error.message);
       Alert.alert("Erro", "Não foi possível enviar a imagem.");
     } finally {
       setIsUploading(false);

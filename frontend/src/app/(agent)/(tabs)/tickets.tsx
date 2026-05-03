@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, TextInput } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AgentTicketCard, AgentTicketStatus } from '@/components/tickets/AgentTicketCard';
+import { Feather } from '@expo/vector-icons';
 import api from '@/services/api';
 
 export default function AgentTickets() {
   const router = useRouter();
   
   const [activeFilter, setActiveFilter] = useState('Todos');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [focused, setFocused] = useState(false);
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-const fetchTickets = async () => {
+  const fetchTickets = async () => {
     try {
       const [ticketsResponse, categoriesResponse] = await Promise.all([
         api.get('/tickets'),
@@ -59,6 +62,24 @@ const fetchTickets = async () => {
     fetchTickets();
   };
 
+  const filteredTickets = tickets.filter(ticket => {
+    let statusMatch = true;
+    if (activeFilter === 'Pendentes') statusMatch = ticket.status === 'OPEN';
+    if (activeFilter === 'Em atendimento') statusMatch = ticket.status === 'IN_PROGRESS';
+    if (activeFilter === 'Escalonados') statusMatch = ticket.status === 'ESCALATED';
+    if (activeFilter === 'Resolvidos') statusMatch = ticket.status === 'CLOSED';
+    let searchMatch = true;
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      const title = (ticket.title || ticket.props?.title || '').toLowerCase();
+      const id = (ticket.id || ticket._id || '').toLowerCase();
+      
+      searchMatch = title.includes(query) || id.includes(query);
+    }
+
+    return statusMatch && searchMatch;
+  });
+
   const mapStatusToUI = (backendStatus: string): AgentTicketStatus => {
     switch(backendStatus) {
       case 'OPEN': return 'PENDENTE';
@@ -67,13 +88,6 @@ const fetchTickets = async () => {
       default: return 'PENDENTE';
     }
   };
-
-  const filteredTickets = tickets.filter(ticket => {
-    if (activeFilter === 'Todos') return true;
-    if (activeFilter === 'Pendentes') return ticket.status === 'OPEN';
-    if (activeFilter === 'Em atendimento') return ticket.status === 'IN_PROGRESS';
-    return true;
-  });
 
   const handleOpenDetails = (ticketId: string) => {
     router.push({
@@ -95,16 +109,33 @@ const fetchTickets = async () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#f97316']} />
         }
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 h-10">
-          {['Todos', 'Pendentes', 'Em atendimento'].map((filter) => {
+        <View
+            className={`flex-row items-center rounded-xl px-4 py-3 border mb-6 ${
+                focused ? "bg-white border-orange-500" : "bg-white border-gray-200"
+            }`}
+        >
+            <Feather name="search" size={20} color={focused ? "#F97316" : "#9CA3AF"} />
+            <TextInput
+                placeholder="Buscar por título ou protocolo..."
+                placeholderTextColor="#9CA3AF"
+                className="ml-3 flex-1 text-slate-700"
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+            />
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 h-12">
+          {['Todos', 'Pendentes', 'Em atendimento', 'Escalonados', 'Resolvidos'].map((filter) => {
             const isActive = activeFilter === filter;
             return (
               <TouchableOpacity
                 key={filter}
                 onPress={() => setActiveFilter(filter)}
-                className={`px-5 py-2 rounded-full mr-3 ${isActive ? 'bg-orange-500' : 'bg-orange-50'}`}
+                className={`px-5 py-2.5 rounded-full mr-3 ${isActive ? 'bg-orange-500' : 'bg-orange-50 border border-orange-100'}`}
               >
-                <Text className={`font-bold ${isActive ? 'text-white' : 'text-orange-500'}`}>
+                <Text className={`font-bold ${isActive ? 'text-white' : 'text-orange-600'}`}>
                   {filter}
                 </Text>
               </TouchableOpacity>

@@ -84,12 +84,7 @@ export default function ClientProfile() {
     } as any);
 
     try {
-      const response = await api.post('/files/profile', formData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data',
-          Accept: 'application/json',
-        },
-      });
+      const response = await api.post('/files/profile', formData);
 
       setImage(uri);
       setHasImage(true);
