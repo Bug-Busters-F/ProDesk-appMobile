@@ -4,9 +4,8 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext'; 
 import * as DocumentPicker from 'expo-document-picker';
-import { uploadFile } from '@/services/api';
+import api, { uploadFile } from '@/services/api';
 
-const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 
 export default function NewTicket() {
   const [title, setTitle] = useState('');
@@ -46,30 +45,21 @@ export default function NewTicket() {
       if (attachment) {
         fileUrl = await uploadFile(attachment.uri, attachment.name);
       }
-      const triageResponse = await fetch(`${BACKEND_URL}/triage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: description.trim() })
+
+      const triageResponse = await api.post('/triage', { 
+        description: description.trim() 
+      });
+      const category = triageResponse.data.value || 'OTHER';
+
+      const ticketResponse = await api.post('/tickets', {
+        title: title.trim(),
+        description: description.trim(),
+        category: category,
+        clientId: user?.id,
+        attachmentUrl: fileUrl 
       });
       
-      const triageData = await triageResponse.json();
-      const category = triageData.value || 'OTHER';
-
-      const ticketResponse = await fetch(`${BACKEND_URL}/tickets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim(),
-          category: category,
-          clientId: user?.id,
-          attachmentUrl: fileUrl 
-        })
-      });
-
-      if (!ticketResponse.ok) throw new Error("Falha ao criar ticket");
-      
-      const ticketData = await ticketResponse.json();
+      const ticketData = ticketResponse.data;
       const ticketId = ticketData.id || ticketData._id;
 
       const initialMessage = `[ NOVA SOLICITAÇÃO ]\n\nTítulo: ${title.trim()}\nDescrição: ${description.trim()}`;
@@ -84,9 +74,10 @@ export default function NewTicket() {
         },
       });
 
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.log("ERRO REAL AO CRIAR TICKET:", error?.response?.data || error.message);
       Alert.alert("Erro", "Não foi possível abrir o chamado. Verifique a sua conexão.");
+    } finally {
       setIsSubmitting(false);
     }
   };

@@ -11,9 +11,7 @@ import { io, Socket } from 'socket.io-client';
 import { MessageBubble, MessageType } from '../../../components/chat/MessageBubble';
 import { useAuth } from '@/contexts/AuthContext';
 import * as DocumentPicker from 'expo-document-picker';
-import { uploadFile } from '@/services/api';
-
-const BACKEND_URL = 'http://10.0.2.2:3000'; 
+import api, { uploadFile } from '@/services/api';
 
 export default function TicketChatScreen() {
   const router = useRouter();
@@ -56,24 +54,15 @@ export default function TicketChatScreen() {
         let finalChatId = null;
 
         if (isNewTicket === 'true') {
-            const chatResponse = await fetch(`${BACKEND_URL}/ProDeskApi/chat`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            const chatResponse = await api.post('/chat', {
                 ticketId: routeId,
                 clientId: user?.id,
                 agentId: '507f1f77bcf86cd799439033', 
                 groupId: '507f1f77bcf86cd799439034', 
-              })
             });
-           
-           if (!chatResponse.ok) {
-             Alert.alert('Erro', 'Não foi possível criar a sala de chat.');
-             return;
-           }
-           
-           const chatData = await chatResponse.json();
-           finalChatId = chatData.id || chatData._id;
+            
+            const chatData = chatResponse.data;
+            finalChatId = chatData.id || chatData._id;
         } else {
            finalChatId = routeId as string;
         }
@@ -81,8 +70,9 @@ export default function TicketChatScreen() {
         if (finalChatId) {
            setRealChatId(finalChatId);
         }
-      } catch (error) {
-        console.error('Erro ao configurar sala de chat:', error);
+      } catch (error: any) {
+        console.log('ERRO API CHAT:', error?.response?.data || error.message);
+        Alert.alert('Erro', 'Não foi possível criar a sala de chat.');
       }
     };
 
@@ -93,12 +83,15 @@ export default function TicketChatScreen() {
 
   useEffect(() => {
     if (!user?.token || !realChatId) return;
+    const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://SEU_IPV4:3000';
 
-    socketRef.current = io(BACKEND_URL, {
+    socketRef.current = io(socketUrl, {
       transports: ['websocket'],
-      auth: { token: user.token } 
+      auth: { token: user.token }, 
+      extraHeaders: {
+        Authorization: `Bearer ${user.token}` 
+      }
     });
-
     const socket = socketRef.current;
 
     socket.on('connect', () => {

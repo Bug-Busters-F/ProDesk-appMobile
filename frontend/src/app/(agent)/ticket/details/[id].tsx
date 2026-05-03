@@ -164,6 +164,8 @@ export default function TicketDetails() {
     );
   }
 
+  const categoryName = categories.find(cat => (cat.id || cat._id) === ticket.category)?.name || ticket.category || 'Carregando...';
+
   if (!ticket) return null;
 
   return (
@@ -253,7 +255,7 @@ export default function TicketDetails() {
             <Text className="text-slate-400 text-xs font-bold mb-2">CATEGORIA</Text>
             <View className="bg-orange-50 self-start px-3 py-1.5 rounded-lg">
               <Text className="text-orange-500 font-bold text-sm">
-                {ticket.category}
+                {categoryName}
               </Text>
             </View>
           </View>
