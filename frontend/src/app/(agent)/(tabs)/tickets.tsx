@@ -3,8 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Ref
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AgentTicketCard, AgentTicketStatus } from '@/components/tickets/AgentTicketCard';
-
-const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
+import api from '@/services/api';
 
 export default function AgentTickets() {
   const router = useRouter();
@@ -14,15 +13,38 @@ export default function AgentTickets() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchTickets = async () => {
+const fetchTickets = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/tickets`);
-      if (!response.ok) throw new Error('Falha ao buscar chamados');
-      
-      const data = await response.json();
-      setTickets(data);
-    } catch (error) {
-      console.error(error);
+      const [ticketsResponse, categoriesResponse] = await Promise.all([
+        api.get('/tickets'),
+        api.get('/category')
+      ]);
+
+      let ticketsData = ticketsResponse.data;
+      const categoriesData = categoriesResponse.data;
+      const categoryDictionary: Record<string, string> = {};
+      categoriesData.forEach((cat: any) => {
+        const catId = cat.id || cat._id;
+        categoryDictionary[catId] = cat.name;
+      });
+      const formattedTickets = ticketsData.map((t: any) => {
+        const rawCategory = t.category || t.props?.category;
+        
+        return {
+          ...t,
+          category: categoryDictionary[rawCategory] || rawCategory || 'Sem Categoria'
+        };
+      });
+
+      formattedTickets.sort((a: any, b: any) => {
+        const dateA = a.createdAt || a.props?.createdAt || 0;
+        const dateB = b.createdAt || b.props?.createdAt || 0;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+
+      setTickets(formattedTickets);
+    } catch (error: any) {
+      console.log("ERRO API TICKETS:", error?.response?.data || error.message);
       Alert.alert("Erro", "Não foi possível carregar os chamados.");
     } finally {
       setLoading(false);
@@ -52,6 +74,13 @@ export default function AgentTickets() {
     if (activeFilter === 'Em atendimento') return ticket.status === 'IN_PROGRESS';
     return true;
   });
+
+  const handleOpenDetails = (ticketId: string) => {
+    router.push({
+      pathname: '/(agent)/ticket/details/[id]',
+      params: { id: ticketId }
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-stone-50" edges={['top']}>
@@ -91,6 +120,7 @@ export default function AgentTickets() {
         ) : (
           filteredTickets.map(t => {
             const ticketId = t.id || t._id;
+            const title = t.title || t.props?.title || 'Chamado sem título'; 
             const category = t.category || t.props?.category;
             const description = t.description || t.props?.description;
             const status = t.status || t.props?.status;
@@ -98,39 +128,17 @@ export default function AgentTickets() {
 
             return (
               <AgentTicketCard 
-                key={ticketId} 
-                ticket={{
+                 key={ticketId} 
+                 ticket={{
                   id: ticketId,
+                  title: title,
                   clientName: 'Cliente', 
                   category: category,
                   timeAgo: new Date(createdAt).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                   description: description,
                   status: mapStatusToUI(status)
                 }} 
-                onPress={async () => {
-                try {
-                  const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticketId}`);
-                  if (!res.ok) {
-                    Alert.alert('Aviso', 'O chat deste chamado ainda não foi criado.');
-                    return; 
-                  }
-
-                  const chatData = await res.json();
-                  const chatId = chatData?.id || chatData?._id;
-                  
-                  if (chatId) {
-                    router.push({
-                      pathname: '/(client)/ticket/[id]',
-                      params: { id: chatId }
-                    });
-                  } else {
-                    Alert.alert('Aviso', 'O chat deste chamado não possui ID válido.');
-                  }
-                } catch (e) {
-                  console.error(e);
-                  Alert.alert('Erro', 'Falha ao conectar na sala do chamado.');
-                }
-              }}
+                 onPress={() => handleOpenDetails(ticketId)}
               />
             )
           })

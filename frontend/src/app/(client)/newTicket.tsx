@@ -3,16 +3,34 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext'; 
+import * as DocumentPicker from 'expo-document-picker';
+import api, { uploadFile } from '@/services/api';
 
-const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 
 export default function NewTicket() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachment, setAttachment] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   
   const router = useRouter();
   const { user } = useAuth(); 
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ 
+        type: '*/*',
+        copyToCacheDirectory: true 
+      });
+      
+      if (!result.canceled) {
+        setAttachment(result.assets[0]);
+      }
+    } catch (error) {
+      console.error("Erro ao selecionar documento:", error);
+      Alert.alert("Erro", "Não foi possível selecionar o arquivo.");
+    }
+  };
 
   const handleSendTicket = async () => {
     if (!title.trim() || !description.trim()) {
@@ -23,26 +41,25 @@ export default function NewTicket() {
     setIsSubmitting(true);
 
     try {
-      const triageResponse = await fetch(`${BACKEND_URL}/triage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: description.trim() })
-      });
-      const triageData = await triageResponse.json();
-      const category = triageData.value || 'OTHER';
-      const ticketResponse = await fetch(`${BACKEND_URL}/tickets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: title.trim(),
-          category: category,
-          description: description.trim(),
-          clientId: user?.id, 
-        })
-      });
+      let fileUrl = '';
+      if (attachment) {
+        fileUrl = await uploadFile(attachment.uri, attachment.name);
+      }
 
-      if (!ticketResponse.ok) throw new Error("Falha ao criar ticket");
-      const ticketData = await ticketResponse.json();
+      const triageResponse = await api.post('/triage', { 
+        description: description.trim() 
+      });
+      const category = triageResponse.data.value || 'OTHER';
+
+      const ticketResponse = await api.post('/tickets', {
+        title: title.trim(),
+        description: description.trim(),
+        category: category,
+        clientId: user?.id,
+        attachmentUrl: fileUrl 
+      });
+      
+      const ticketData = ticketResponse.data;
       const ticketId = ticketData.id || ticketData._id;
 
       const initialMessage = `[ NOVA SOLICITAÇÃO ]\n\nTítulo: ${title.trim()}\nDescrição: ${description.trim()}`;
@@ -52,13 +69,15 @@ export default function NewTicket() {
         params: { 
           id: ticketId,
           initialMessage: initialMessage, 
-          isNewTicket: 'true'
+          isNewTicket: 'true',
+          attachmentUrl: fileUrl
         },
       });
 
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.log("ERRO REAL AO CRIAR TICKET:", error?.response?.data || error.message);
       Alert.alert("Erro", "Não foi possível abrir o chamado. Verifique a sua conexão.");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -68,6 +87,7 @@ export default function NewTicket() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-white">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pt-20">
+        
         <View className="flex-row items-center mb-8">
           <TouchableOpacity onPress={() => router.back()} disabled={isSubmitting}>
             <Ionicons name="arrow-back" size={24} color="#1e293b" />
@@ -88,7 +108,7 @@ export default function NewTicket() {
           </Text>
           <TextInput
             placeholder="Ex: Falha na conexão com o servidor"
-            className="w-full h-14 border border-slate-200 rounded-xl px-4 text-slate-900"
+            className="w-full h-14 border border-slate-200 rounded-xl px-4 text-slate-900 focus:border-orange-500"
             value={title}
             onChangeText={setTitle}
             editable={!isSubmitting}
@@ -105,7 +125,7 @@ export default function NewTicket() {
             numberOfLines={6}
             maxLength={500}
             textAlignVertical="top"
-            className="w-full p-4 border border-slate-200 rounded-xl text-slate-900 h-40"
+            className="w-full p-4 border border-slate-200 rounded-xl text-slate-900 h-40 focus:border-orange-500"
             value={description}
             onChangeText={setDescription}
             editable={!isSubmitting}
@@ -115,10 +135,35 @@ export default function NewTicket() {
           </Text>
         </View>
 
+        <View className="mb-8">
+          <Text className="text-slate-700 font-semibold mb-2">Anexo (opcional)</Text>
+          
+          {!attachment ? (
+            <TouchableOpacity 
+              onPress={handlePickDocument}
+              disabled={isSubmitting}
+              className="border-2 border-dashed border-slate-300 rounded-xl p-6 items-center justify-center bg-slate-50"
+            >
+              <Feather name="paperclip" size={24} color="#64748b" />
+              <Text className="text-slate-500 mt-2 font-medium">Selecionar arquivo ou foto</Text>
+            </TouchableOpacity>
+          ) : (
+            <View className="flex-row items-center bg-orange-50 p-4 rounded-xl border border-orange-200">
+              <Feather name="file" size={20} color="#f97316" />
+              <Text className="flex-1 ml-3 text-slate-700 font-medium" numberOfLines={1}>
+                {attachment.name}
+              </Text>
+              <TouchableOpacity onPress={() => setAttachment(null)} disabled={isSubmitting}>
+                <Ionicons name="close-circle" size={24} color="#ef4444" />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
         <TouchableOpacity 
           onPress={handleSendTicket}
           disabled={!isFormValid || isSubmitting}
-          className={`w-full h-16 rounded-2xl flex-row items-center justify-center shadow-lg mb-4 transition-colors ${
+          className={`w-full h-16 rounded-2xl flex-row items-center justify-center shadow-lg mb-10 transition-colors ${
             isFormValid && !isSubmitting ? 'bg-orange-500 shadow-orange-300' : 'bg-slate-300 shadow-slate-200'
           }`}
         >

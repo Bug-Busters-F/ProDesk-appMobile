@@ -5,9 +5,7 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { io, Socket } from 'socket.io-client';
 import { MessageBubble, MessageType } from '@/components/chat/MessageBubble';
-import { useAuth } from '@/contexts/AuthContext';
-
-const BACKEND_URL = 'http://10.0.2.2:3000';
+import { api, useAuth } from '@/contexts/AuthContext';
 
 export default function AgentTicketChatScreen() {
   const router = useRouter();
@@ -22,11 +20,16 @@ export default function AgentTicketChatScreen() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (!user?.token) return;
+   if (!user?.token) return;
 
-    socketRef.current = io(BACKEND_URL, {
+    const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://SEU_IPV4:3000';
+
+    socketRef.current = io(socketUrl, {
       transports: ['websocket'],
-      auth: { token: user.token }
+      auth: { token: user.token }, 
+      extraHeaders: {
+        Authorization: `Bearer ${user.token}` 
+      }
     });
 
     const socket = socketRef.current;
@@ -58,6 +61,7 @@ export default function AgentTicketChatScreen() {
         text: msg.content,
         sender: isMe ? 'USER' : 'AGENT',
         agentName: isMe ? undefined : 'Cliente',
+        attachmentUrl: msg.attachmentUrl,
         time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       } as MessageType]); 
     });

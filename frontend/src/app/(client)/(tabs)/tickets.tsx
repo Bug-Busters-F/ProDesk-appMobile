@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
+import { api, useAuth } from '@/contexts/AuthContext';
 import {
   TicketCard,
   TicketData,
@@ -10,7 +10,6 @@ import {
   TicketStatus,
 } from '@/components/tickets/TicketCard';
 
-const BACKEND_URL = 'http://10.0.2.2:3000/ProDeskApi';
 
 export default function Tickets() {
   const router = useRouter();
@@ -23,12 +22,8 @@ export default function Tickets() {
 
   const fetchTickets = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/tickets`);
-      
-      if (!response.ok) {
-        throw new Error('Falha ao buscar chamados');
-      }
-      const data = await response.json();
+      const response = await api.get('/tickets');
+      const data = response.data; 
 
       const myTickets = data.filter((t: any) => t.clientId === user?.id);
 
@@ -47,8 +42,8 @@ export default function Tickets() {
       formattedTickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setTickets(formattedTickets);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.log("ERRO API TICKETS CLIENTE:", error?.response?.data || error.message);
       Alert.alert("Erro", "Não foi possível carregar os seus chamados.");
     } finally {
       setLoading(false);
@@ -128,8 +123,8 @@ export default function Tickets() {
               ticket={ticket}
               onPress={async () => {
                 try {
-                  const res = await fetch(`${BACKEND_URL}/chat/ticket/${ticket._id}`); 
-                  const chatData = await res.json();
+                  const res = await api.get(`/chat/ticket/${ticket._id}`); 
+                  const chatData = res.data;
                   const chatId = chatData?.id || chatData?._id;
                   
                   if (chatId) {
@@ -140,8 +135,8 @@ export default function Tickets() {
                   } else {
                     Alert.alert('Aviso', 'O chat deste chamado ainda não foi criado.');
                   }
-                } catch (e) {
-                  console.error(e);
+                } catch (e: any) {
+                  console.log("ERRO API CHAT CLIENTE:", e?.response?.data || e.message);
                   Alert.alert('Erro', 'Falha ao conectar na sala do chamado.');
                 }
               }}

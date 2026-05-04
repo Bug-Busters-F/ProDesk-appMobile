@@ -3,20 +3,24 @@ import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
-import CompanyCard from '@/components/CompanyCard';
+import CompanyCard from '@/components/company/CompanyCard';
 import api from '@/services/api';
+import EditCompanyModal from '@/components/company/EditCompanyModal';
 
 interface Company {
     id: string
     name: string
     cnpj: string
+    timestamp?: number 
 }
 
 export default function Companies () {
     const router = useRouter();
-    const [focused, setFocused] = useState(false);
+    const [focused, setFocused] = useState(false)
     const [companies, setCompanies] =  useState<Company[]>([])
-    const [loading, setLoading ] = useState(true) 
+    const [loading, setLoading ] = useState(true)
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false)
+    const [companyToEdit, setCompanyToEdit] = useState<Company | null>(null)
 
     const fetchCompanies = async () => {
         try {
@@ -24,8 +28,8 @@ export default function Companies () {
             const response = await api.get('/company')
             setCompanies(response.data)
         } catch (error) {
-            console.error("Erro ao buscar empresas:", error);
-            Alert.alert("Erro", "Não foi possível carregar a lista de empresas.");
+            console.error("Erro ao buscar empresas:", error)
+            Alert.alert("Erro", "Não foi possível carregar a lista de empresas.")
         } finally {
             setLoading(false)
         }
@@ -61,14 +65,25 @@ export default function Companies () {
         )
     }
 
-    {/* handleEdit aqui */}
+    const handleOpenEdit = (company: Company) => {
+        setCompanyToEdit(company);
+        setIsEditModalVisible(true);
+    }
+
+    const handleUpdateSuccess = (updatedCompany: Company) => {
+        setCompanies((prevCompanies) => 
+            prevCompanies.map(company => 
+                company.id === updatedCompany.id ? { ...updatedCompany, timestamp: Date.now() } : company
+            )
+        );
+    }
 
     return (
         <SafeAreaView className="flex-1 px-4 bg-stone-50 mt-6">
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row items-center justify-between mb-6">
                     <View>
-                        <Text className="text-2xl font-bold text-slate-900">Controle de Empresas</Text>
+                        <Text className="text-2xl font-bold text-slate-900 mb-2">Controle de Empresas</Text>
                         <Text className="text-slate-500">Gerencie as empresas do sistema</Text>
                     </View>
                     <TouchableOpacity
@@ -113,26 +128,6 @@ export default function Companies () {
                         onBlur={() => setFocused(false)}
                     />
                 </View>
-                {/* 
-                    
-                    <View className="flex-row items-center px-5 py-5 rounded-2xl mb-6 bg-[#F5E9DA] border border-[#E8D5C0]">
-                        <View className="size-14 rounded-full bg-[#F1DEC7] flex items-center justify-center mr-5">
-                            <MaterialIcons name="apartment" size={26} color="#F97316" />
-                        </View>
-                       
-                        <View>
-                            <Text className="text-xs font-semibold tracking-widest text-orange-900">
-                            TOTAL DE EMPRESAS
-                            </Text>
-    
-                            <Text className="text-3xl font-bold text-orange-900">
-                            42
-                            </Text>
-                        </View>
-                    </View>
-                    
-                */}
-
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#F97316" className='mt-10' />
@@ -140,17 +135,28 @@ export default function Companies () {
                     companies?.map(company => (
                         <CompanyCard
                             key={company.id}
+                            id={company.id}
                             name={company.name}
                             cnpj={company.cnpj}
+                            timestamp={company.timestamp} 
                             status="ACTIVE"
                             members={["JD"]}
                             extraMembers={4}
-                            onEdit={() => console.log("Editar")}
+                            onEdit={() => handleOpenEdit(company)}
                             onDelete={() => handleDelete(company.id, company.name)}
                         />
                     ))
                 )}
             </ScrollView>
+
+            <EditCompanyModal 
+                visible={isEditModalVisible}
+                company={companyToEdit}
+                onClose={() => setIsEditModalVisible(false)}
+                onSuccess={handleUpdateSuccess}
+            />
+            
         </SafeAreaView>
+        
     )
 }

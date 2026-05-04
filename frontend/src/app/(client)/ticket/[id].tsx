@@ -10,16 +10,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { io, Socket } from 'socket.io-client';
 import { MessageBubble, MessageType } from '../../../components/chat/MessageBubble';
 import { useAuth } from '@/contexts/AuthContext';
-
-const BACKEND_URL = 'http://10.0.2.2:3000'; // O socket vai usar essa base limpa
-
-// Na função setupChatRoom(), adicione o prefixo ProDeskApi na requisição HTTP:
-
+import * as DocumentPicker from 'expo-document-picker';
+import api, { uploadFile } from '@/services/api';
 
 export default function TicketChatScreen() {
   const router = useRouter();
   
-  const { id: routeId, initialMessage, isNewTicket } = useLocalSearchParams();
+  const { id: routeId, initialMessage, isNewTicket, attachmentUrl } = useLocalSearchParams();
   const { user } = useAuth();
   
   const [inputText, setInputText] = useState('');
@@ -32,31 +29,40 @@ export default function TicketChatScreen() {
   const socketRef = useRef<Socket | null>(null);
   const hasSentInitialMessage = useRef(false);
 
+  const handlePickAndSendFile = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+    
+    if (!result.canceled && realChatId) {
+        const file = result.assets[0];
+        const fileUrl = await uploadFile(file.uri, file.name);
+        
+        const isImage = file.name.match(/\.(jpeg|jpg|gif|png)$/i);
+        const messageType = isImage ? 'IMAGE' : 'FILE';
+        
+        socketRef.current?.emit('enviarMensagem', { 
+            chatId: realChatId, 
+            content: isImage ? 'Imagem enviada' : 'Arquivo enviado',
+            attachmentUrl: fileUrl,
+            type: messageType 
+        });
+    }
+  };
+
   useEffect(() => {
     const setupChatRoom = async () => {
-      
       try {
         let finalChatId = null;
 
         if (isNewTicket === 'true') {
-            const chatResponse = await fetch(`${BACKEND_URL}/ProDeskApi/chat`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            const chatResponse = await api.post('/chat', {
                 ticketId: routeId,
                 clientId: user?.id,
                 agentId: '507f1f77bcf86cd799439033', 
                 groupId: '507f1f77bcf86cd799439034', 
-              })
             });
-           
-           if (!chatResponse.ok) {
-             Alert.alert('Erro', 'Não foi possível criar a sala de chat.');
-             return;
-           }
-           
-           const chatData = await chatResponse.json();
-           finalChatId = chatData.id || chatData._id;
+            
+            const chatData = chatResponse.data;
+            finalChatId = chatData.id || chatData._id;
         } else {
            finalChatId = routeId as string;
         }
@@ -64,8 +70,9 @@ export default function TicketChatScreen() {
         if (finalChatId) {
            setRealChatId(finalChatId);
         }
-      } catch (error) {
-        console.error('Erro ao configurar sala de chat:', error);
+      } catch (error: any) {
+        console.log('ERRO API CHAT:', error?.response?.data || error.message);
+        Alert.alert('Erro', 'Não foi possível criar a sala de chat.');
       }
     };
 
@@ -76,12 +83,15 @@ export default function TicketChatScreen() {
 
   useEffect(() => {
     if (!user?.token || !realChatId) return;
+    const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://SEU_IPV4:3000';
 
-    socketRef.current = io(BACKEND_URL, {
+    socketRef.current = io(socketUrl, {
       transports: ['websocket'],
-      auth: { token: user.token } 
+      auth: { token: user.token }, 
+      extraHeaders: {
+        Authorization: `Bearer ${user.token}` 
+      }
     });
-
     const socket = socketRef.current;
 
     socket.on('connect', () => {
@@ -90,7 +100,17 @@ export default function TicketChatScreen() {
 
       if (initialMessage && !hasSentInitialMessage.current) {
         hasSentInitialMessage.current = true;
-        socket.emit('enviarMensagem', { chatId: realChatId, content: initialMessage });
+        const safeAttachmentUrl = Array.isArray(attachmentUrl) ? attachmentUrl[0] : attachmentUrl;
+        
+        const isImage = safeAttachmentUrl && safeAttachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i);
+        const tipoInicial = safeAttachmentUrl ? (isImage ? 'IMAGE' : 'FILE') : 'TEXT';
+
+        socket.emit('enviarMensagem', { 
+          chatId: realChatId, 
+          content: initialMessage,
+          attachmentUrl: safeAttachmentUrl, 
+          type: tipoInicial 
+        });
       }
     });
 
@@ -98,6 +118,8 @@ export default function TicketChatScreen() {
       const history = data.mensagens.map((msg) => ({
         id: msg._id || msg.id,
         text: msg.content,
+        attachmentUrl: msg.attachmentUrl, 
+        type: msg.type, 
         sender: msg.senderId === user.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
         time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       } as MessageType)); 
@@ -110,6 +132,8 @@ export default function TicketChatScreen() {
       setMessages((prev) => [...prev, {
         id: msg._id || msg.id,
         text: msg.content,
+        attachmentUrl: msg.attachmentUrl, 
+        type: msg.type,
         sender: msg.senderId === user.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
         time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       } as MessageType]);
@@ -121,10 +145,10 @@ export default function TicketChatScreen() {
       socket.emit('sairChat', { chatId: realChatId });
       socket.disconnect();
     };
-  }, [realChatId, user, initialMessage]);
+  }, [realChatId, user, initialMessage, attachmentUrl]);
 
   const handleSendMessage = () => {
-    if (!inputText.trim() || !realChatId) return; // Alterado para validar o realChatId
+    if (!inputText.trim() || !realChatId) return; 
     socketRef.current?.emit('enviarMensagem', { chatId: realChatId, content: inputText.trim() });
     setInputText('');
   };
@@ -133,7 +157,6 @@ export default function TicketChatScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         
-        {/* HEADER */}
         <View className="flex-row items-center px-6 py-4 border-b border-slate-100 shadow-sm z-10 bg-white">
           <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2 -ml-2">
             <Ionicons name="arrow-back" size={24} color="#1e293b" />
@@ -146,7 +169,6 @@ export default function TicketChatScreen() {
           </View>
         </View>
 
-        {/* ÁREA DO CHAT */}
         {isLoadingHistory ? (
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color="#f97316" />
@@ -174,10 +196,9 @@ export default function TicketChatScreen() {
           />
         )}
 
-        {/* BARRA DE INPUT */}
         <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
-          <TouchableOpacity className="p-2">
-            <Feather name="plus-circle" size={24} color="#94a3b8" />
+          <TouchableOpacity onPress={handlePickAndSendFile} className="p-2">
+              <Feather name="plus-circle" size={24} color="#94a3b8" />
           </TouchableOpacity>
           
           <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
