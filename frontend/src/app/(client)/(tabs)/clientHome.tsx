@@ -37,7 +37,7 @@ export default function Home() {
               Inicie um novo atendimento com nossa equipe técnica ou de suporte.
             </Text>
 
-            <TouchableOpacity className="w-full bg-orange-500 py-3 rounded-xl items-center">
+            <TouchableOpacity onPress={() => router.push('/(client)/newTicket')} className="w-full bg-orange-500 py-3 rounded-xl items-center">
               <Text className="text-white font-semibold">
                 + Novo Ticket
               </Text>
@@ -61,7 +61,7 @@ export default function Home() {
               Acompanhe o status e histórico de todas as suas solicitações.
             </Text>
 
-            <TouchableOpacity className="w-full bg-orange-100 py-3 rounded-xl items-center">
+            <TouchableOpacity onPress={() => router.push('/(client)/(tabs)/tickets')} className="w-full bg-orange-100 py-3 rounded-xl items-center">
               <Text className="text-orange-500 font-semibold">
                 Ver Histórico
               </Text>
