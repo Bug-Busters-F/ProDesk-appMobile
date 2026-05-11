@@ -133,7 +133,7 @@ export default function TicketDetails() {
     try {
       await api.put(`/tickets/${id}/escalate`, {
         groupId: selectedCategory.id || 'UUID_PADRAO_DO_GRUPO', 
-        category: selectedCategory.name,
+        category: selectedCategory.id,
         whatWasDone: escalateReason,
       });
 
