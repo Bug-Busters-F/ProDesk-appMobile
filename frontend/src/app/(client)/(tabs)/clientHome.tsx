@@ -12,13 +12,19 @@ export default function Home() {
       <View className="flex-1 px-5 pt-6">
         
         {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800">
-            Olá, Cliente
-          </Text>
-          <Text className="text-gray-400 mt-1">
-            Como podemos ajudar hoje?
-          </Text>
+        <View className="mb-6 pb-3  flex flex-row justify-between">
+          <View>
+            <Text className="text-2xl font-bold text-gray-800">
+              Olá, Cliente
+            </Text>
+            <Text className="text-gray-400 mt-1">
+              Como podemos ajudar hoje?
+            </Text>
+          </View>
+          <View className="flex justify-center items-center h-12 w-12 bg-orange-50 rounded-full">
+            <MaterialIcons name="notifications-none" size={24} color="#FF8C00" />
+          </View>
+
         </View>
 
         {/* Card 1 */}

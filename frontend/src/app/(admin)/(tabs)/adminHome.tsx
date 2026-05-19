@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, FlatList, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 const recentTickets = [
@@ -41,10 +41,13 @@ export default function Home() {
         <View className="flex-1 px-6 pt-5">
 
           {/* Header */}
-          <View className="flex-row justify-between items-center mb-6">
+          <View className="flex-row justify-between pb-3 items-center mb-6 border-b border-b-gray-300">
             <Text className="text-2xl font-bold text-gray-800">
               Painel Geral
             </Text>
+            <View className="flex justify-center items-center h-12 w-12 bg-orange-50 rounded-full">
+              <MaterialIcons name="notifications-none" size={24} color="#FF8C00" />
+            </View>
           </View>
 
           {/* Visão Geral */}
