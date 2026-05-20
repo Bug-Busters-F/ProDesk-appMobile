@@ -1,8 +1,9 @@
-import React from "react";
-import { View, Text, FlatList, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, FlatList, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
 
 const recentTickets = [
   {
@@ -33,31 +34,37 @@ const recentTickets = [
 
 export default function Home() {
   const router = useRouter();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F3F4F6]">
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaView className="flex-1 bg-stone-50">
+      <TouchableWithoutFeedback onPress={() => setShowNotifications(false)}>
+        <ScrollView showsVerticalScrollIndicator={false}>
 
-        <View className="flex-1 px-6 pt-5">
+          <View className="flex-1 px-6 pt-5">
 
-          {/* Header */}
-          <View className="flex-row justify-between pb-3 items-center mb-6 border-b border-b-gray-300">
-            <Text className="text-2xl font-bold text-gray-800">
-              Painel Geral
-            </Text>
-            <View className="flex justify-center items-center h-12 w-12 bg-orange-50 rounded-full">
-              <MaterialIcons name="notifications-none" size={24} color="#FF8C00" />
+            {/* Header */}
+            <View className="flex-row justify-between pb-3 items-center mb-6 border-b border-b-gray-300 relative z-50">
+              <View>
+                <Text className="text-2xl font-bold text-gray-800">
+                  Visão Geral
+                </Text>
+                <Text className="text-gray-400 mt-1">
+                  Métricas e solicitações recentes. 
+                </Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => setShowNotifications(!showNotifications)}
+                className="flex justify-center items-center h-12 w-12 bg-orange-50 rounded-full"
+              >
+                <MaterialIcons name="notifications-none" size={24} color="#FF8C00" />
+              </TouchableOpacity>
+
+              {showNotifications && (
+                <NotificationDropdown onClose={() => setShowNotifications(false)} />
+              )}
             </View>
-          </View>
-
-          {/* Visão Geral */}
-          <Text className="text-lg font-bold text-gray-800">
-            Visão Geral
-          </Text>
-          <Text className="text-gray-400 mb-4">
-            Bem-vindo de volta! Aqui está o resumo de hoje.
-          </Text>
-
+          
           {/* Cards principais */}
           <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
             <View className="flex-row justify-between items-center">
@@ -259,6 +266,7 @@ export default function Home() {
           <View className="h-10" />
         </View>
       </ScrollView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
