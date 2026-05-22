@@ -15,7 +15,37 @@ export default function TicketHistory() {
   const fetchHistory = async () => {
     try {
       const res = await api.get(`/tickets/${id}/history`);
-      setHistory(res.data.history);
+      const historyArray = res.data.history || res.data || [];
+      const agentIds = [...new Set(historyArray
+        .map((item: any) => item.responsibleAgent)
+        .filter((agentId: any) => agentId !== null && agentId !== undefined)
+      )];
+
+      const agentDictionary: Record<string, string> = {};
+      await Promise.all(
+        agentIds.map(async (agentId: any) => {
+          try {
+            const userRes = await api.get(`/user/${agentId}`);
+            agentDictionary[agentId] = userRes.data.name;
+          } catch (err) {
+            console.log(`Erro ao buscar nome do agente ${agentId}`, err);
+            agentDictionary[agentId] = "Especialista";
+          }
+        })
+      );
+
+      const mappedHistory = historyArray.map((item: any) => ({
+        ...item,
+        agentName: item.responsibleAgent ? (agentDictionary[item.responsibleAgent] || "Especialista") : null
+      }));
+
+      const sortedHistory = mappedHistory.sort((a: any, b: any) => {
+        const dateA = new Date(a.occurredAt?.$date || a.occurredAt).getTime();
+        const dateB = new Date(b.occurredAt?.$date || b.occurredAt).getTime();
+        return dateB - dateA;
+      });
+
+      setHistory(sortedHistory);
     } catch (e) {
       console.log(e);
     } finally {
@@ -41,6 +71,7 @@ export default function TicketHistory() {
         return { icon: 'circle-medium', color: 'text-gray-500', bg: 'bg-gray-100' };
     }
   };
+
   const formatDate = (dateObj: any) => {
     const dateString = dateObj?.$date || dateObj;
     if (!dateString) return '';
@@ -87,10 +118,12 @@ export default function TicketHistory() {
             </View>
           )}
 
-          {item.responsibleAgent && (
+          {item.agentName && (
             <View className="flex-row items-center mt-2">
-              <Feather name="user" size={14} color="#94a3b8" />
-              <Text className="text-slate-400 text-xs ml-1">ID Resp: {item.responsibleAgent}</Text>
+              <Feather name="user" size={14} color="#f97316" />
+              <Text className="text-orange-600 font-bold text-xs ml-1.5 uppercase tracking-wide">
+                Resp: {item.agentName}
+              </Text>
             </View>
           )}
         </View>
