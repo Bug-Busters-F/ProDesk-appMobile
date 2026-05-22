@@ -17,7 +17,7 @@ export default function TicketChatScreen() {
   const router = useRouter();
   
   const { id: routeId, initialMessage, isNewTicket, attachmentUrl, ticketId } = useLocalSearchParams();
-  const realTicketId = isNewTicket === 'true' ? routeId : ticketId;
+  const realTicketId = (isNewTicket === 'true' ? routeId : ticketId) as string;
   const { user } = useAuth();
   
   const [inputText, setInputText] = useState('');
