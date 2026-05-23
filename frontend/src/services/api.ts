@@ -3,7 +3,11 @@ import axios from 'axios'
 import { Platform } from 'react-native'
 
 const api = axios.create({
+    // URL para desenvolvimento local (emulador Android)
     baseURL: Platform.OS === 'android' ? 'http://10.0.2.2:3000/ProDeskApi' : 'http://localhost:3000/ProDeskApi'
+
+    // Quando for executar a build, substitua pela URL gerada pelo Ngrok e comente a linha acima. A URL muda sempre que reinicia a sessão do Ngrok
+    // baseURL: 'https://URL_DO_NGROK/ProDeskApi'
 })
 
 api.interceptors.request.use(async (config) => {
