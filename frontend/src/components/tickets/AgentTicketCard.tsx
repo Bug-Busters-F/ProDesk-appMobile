@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 
-export type AgentTicketStatus = 'PENDENTE' | 'EM ATENDIMENTO' | 'ESCALONADO';
+export type AgentTicketStatus = 'PENDENTE' | 'EM ATENDIMENTO' | 'ESCALONADO' | 'RESOLVIDO';
 
 export type AgentTicketData = {
   id: string;
@@ -22,6 +22,7 @@ const STATUS_CONFIG = {
   'PENDENTE': { dot: 'bg-red-500', button: 'bg-orange-500', buttonText: 'text-white', label: 'Atender' },
   'EM ATENDIMENTO': { dot: 'bg-blue-500', button: 'bg-white border border-orange-500', buttonText: 'text-orange-500', label: 'Detalhes' },
   'ESCALONADO': { dot: 'bg-orange-500', button: 'bg-white border border-orange-500', buttonText: 'text-orange-500', label: 'Detalhes' },
+  'RESOLVIDO': { dot: 'bg-emerald-500', button: 'bg-emerald-50 border border-emerald-200', buttonText: 'text-emerald-600', label: 'Ver Detalhes' },
 };
 
 export function AgentTicketCard({ ticket, onPress }: Props) {

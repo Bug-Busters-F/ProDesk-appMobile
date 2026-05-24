@@ -24,10 +24,26 @@ export default function TicketChatScreen() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   
   const [realChatId, setRealChatId] = useState<string | null>(null);
+  const [isTicketClosed, setIsTicketClosed] = useState(false);
   
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
   const hasSentInitialMessage = useRef(false);
+
+  const checkTicketStatus = async (chatId: string) => {
+    try {
+      const chatRes = await api.get(`/chat/${chatId}`);
+      const ticketId = chatRes.data.ticketId;
+      if (ticketId) {
+        const ticketRes = await api.get(`/tickets/${ticketId}`);
+        if (ticketRes.data.status === 'CLOSED') {
+          setIsTicketClosed(true);
+        }
+      }
+    } catch (e) {
+      console.log('Erro ao buscar status do chamado', e);
+    }
+  };
 
   const handlePickAndSendFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
@@ -69,6 +85,9 @@ export default function TicketChatScreen() {
 
         if (finalChatId) {
            setRealChatId(finalChatId);
+           if (isNewTicket !== 'true') {
+             checkTicketStatus(finalChatId);
+           }
         }
       } catch (error: any) {
         console.log('ERRO API CHAT:', error?.response?.data || error.message);
@@ -196,40 +215,51 @@ export default function TicketChatScreen() {
           />
         )}
 
-        <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
-          <TouchableOpacity onPress={handlePickAndSendFile} className="p-2">
-              <Feather name="plus-circle" size={24} color="#94a3b8" />
-          </TouchableOpacity>
-          
-          <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
-            <TextInput
-              placeholder="Digite sua mensagem..."
-              className="flex-1 text-slate-800 h-full"
-              value={inputText}
-              onChangeText={setInputText}
-              onSubmitEditing={handleSendMessage}
-            />
-            <TouchableOpacity disabled={!inputText.trim()}>
-              <Feather name="smile" size={20} color={inputText.trim() ? "#f97316" : "#94a3b8"} />
+        {isTicketClosed ? (
+          <View className="px-6 py-4 border-t border-slate-100 bg-slate-50 items-center justify-center">
+            <View className="bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-100 flex-row items-center">
+              <Feather name="check-circle" size={16} color="#10b981" />
+              <Text className="text-emerald-700 font-bold text-xs ml-2 text-center">
+                Este chamado foi resolvido. O chat está fechado para novas mensagens.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
+            <TouchableOpacity onPress={handlePickAndSendFile} className="p-2">
+                <Feather name="plus-circle" size={24} color="#94a3b8" />
+            </TouchableOpacity>
+            
+            <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
+              <TextInput
+                placeholder="Digite sua mensagem..."
+                className="flex-1 text-slate-800 h-full"
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={handleSendMessage}
+              />
+              <TouchableOpacity disabled={!inputText.trim()}>
+                <Feather name="smile" size={20} color={inputText.trim() ? "#f97316" : "#94a3b8"} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              onPress={handleSendMessage}
+              disabled={!inputText.trim()}
+              className="w-12 h-12 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: inputText.trim() ? '#f97316' : '#e2e8f0',
+                elevation: inputText.trim() ? 4 : 0,
+                shadowColor: '#fdba74',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: inputText.trim() ? 0.4 : 0,
+                shadowRadius: 4,
+              }}
+            >
+              <Ionicons name="send" size={18} color="white" style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity 
-            onPress={handleSendMessage}
-            disabled={!inputText.trim()}
-            className="w-12 h-12 rounded-full items-center justify-center"
-            style={{
-              backgroundColor: inputText.trim() ? '#f97316' : '#e2e8f0',
-              elevation: inputText.trim() ? 4 : 0,
-              shadowColor: '#fdba74',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: inputText.trim() ? 0.4 : 0,
-              shadowRadius: 4,
-            }}
-          >
-            <Ionicons name="send" size={18} color="white" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-        </View>
+        )}
 
       </KeyboardAvoidingView>
     </SafeAreaView>

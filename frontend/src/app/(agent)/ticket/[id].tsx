@@ -15,9 +15,31 @@ export default function AgentTicketChatScreen() {
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isTicketClosed, setIsTicketClosed] = useState(false);
   
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
+
+  const checkTicketStatus = async () => {
+    try {
+      const chatRes = await api.get(`/chat/${id}`);
+      const ticketId = chatRes.data.ticketId;
+      if (ticketId) {
+        const ticketRes = await api.get(`/tickets/${ticketId}`);
+        if (ticketRes.data.status === 'CLOSED') {
+          setIsTicketClosed(true);
+        }
+      }
+    } catch (e) {
+      console.log('Erro ao buscar status do chamado', e);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      checkTicketStatus();
+    }
+  }, [id]);
 
   useEffect(() => {
    if (!user?.token) return;
@@ -110,25 +132,36 @@ export default function AgentTicketChatScreen() {
           />
         )}
 
-        <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
-          <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
-            <TextInput
-              placeholder="Responder ao cliente..."
-              className="flex-1 text-slate-800 h-full"
-              value={inputText}
-              onChangeText={setInputText}
-              onSubmitEditing={handleSendMessage}
-            />
+        {isTicketClosed ? (
+          <View className="px-6 py-4 border-t border-slate-100 bg-slate-50 items-center justify-center">
+            <View className="bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-100 flex-row items-center">
+              <Feather name="check-circle" size={16} color="#10b981" />
+              <Text className="text-emerald-700 font-bold text-xs ml-2 text-center">
+                Este chamado foi resolvido. O chat está fechado para novas mensagens.
+              </Text>
+            </View>
           </View>
-          <TouchableOpacity 
-            onPress={handleSendMessage}
-            disabled={!inputText.trim()}
-            className="w-12 h-12 rounded-full items-center justify-center"
-            style={{ backgroundColor: inputText.trim() ? '#f97316' : '#e2e8f0' }}
-          >
-            <Ionicons name="send" size={18} color="white" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-        </View>
+        ) : (
+          <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
+            <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
+              <TextInput
+                placeholder="Responder ao cliente..."
+                className="flex-1 text-slate-800 h-full"
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={handleSendMessage}
+              />
+            </View>
+            <TouchableOpacity 
+              onPress={handleSendMessage}
+              disabled={!inputText.trim()}
+              className="w-12 h-12 rounded-full items-center justify-center"
+              style={{ backgroundColor: inputText.trim() ? '#f97316' : '#e2e8f0' }}
+            >
+              <Ionicons name="send" size={18} color="white" style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
+          </View>
+        )}
 
       </KeyboardAvoidingView>
     </SafeAreaView>
