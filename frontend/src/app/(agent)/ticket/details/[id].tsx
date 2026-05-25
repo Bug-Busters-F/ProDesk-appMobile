@@ -20,6 +20,7 @@ export default function TicketDetails() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showEscalateModal, setShowEscalateModal] = useState(false);
+  const [selectedEscalationLevel, setSelectedEscalationLevel] = useState<number>(1);
   const [escalateReason, setEscalateReason] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
@@ -119,6 +120,7 @@ export default function TicketDetails() {
        Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
        return;
     }
+    setSelectedEscalationLevel(ticket?.escalationLevel ?? 1);
     setShowEscalateModal(true);
   };
 
@@ -136,6 +138,7 @@ export default function TicketDetails() {
       await api.put(`/tickets/${id}/status`, {
         status: 'ESCALATED',
         groupId: selectedCategory.id || selectedCategory._id || 'UUID_PADRAO_DO_GRUPO', 
+        escalationLevel: selectedEscalationLevel,
         category: selectedCategory.name,
         whatWasDone: escalateReason,
       });
@@ -406,6 +409,35 @@ export default function TicketDetails() {
                 >
                   <Text className={selectedCategory?.id === cat.id ? 'text-orange-600 font-bold' : 'text-slate-600'}>
                     {cat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* SELEÇÃO DE NÍVEL */}
+            <Text className="text-slate-500 font-medium mb-2 text-sm">
+              Selecione o nível de escalonamento
+            </Text>
+
+            <View className="flex-row mb-4">
+              {[1, 2, 3].map((level) => (
+                <TouchableOpacity
+                  key={level}
+                  onPress={() => setSelectedEscalationLevel(level)}
+                  className={`px-4 py-2 rounded-xl border mr-2 ${
+                    selectedEscalationLevel === level
+                      ? 'bg-orange-50 border-orange-500'
+                      : 'bg-white border-gray-200'
+                  }`}
+                >
+                  <Text
+                    className={
+                      selectedEscalationLevel === level
+                        ? 'text-orange-600 font-bold'
+                        : 'text-slate-600'
+                    }
+                  >
+                    N{level}
                   </Text>
                 </TouchableOpacity>
               ))}
