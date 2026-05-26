@@ -52,3 +52,48 @@ Execute a aplicação em modo de desenvolvimento:
 ```sh
 npx expo start
 ```
+
+### (OPCIONAL)
+### 4. Gerando o APK (Build)
+
+O APK precisa de uma URL pública para acessar o backend, já que o endereço local (`localhost`) não é acessível fora da máquina.
+
+1. Acesse dashboard.ngrok.com/signup e crie sua conta.
+
+2. Acesse dashboard.ngrok.com/get-started/your-authtoken e copie seu token.
+
+3. Salve o token localmente. Isso só precisa ser feito uma vez.
+
+```typescript
+npx ngrok config add-authtoken <SEU_TOKEN_AQUI>
+```
+
+4. Inicie o ngrok apontando para a porta do backend:
+
+```typescript
+npx ngrok http 3000
+```
+
+5. Copie a URL gerada e atualize o arquivo `frontend/services/api.ts`.
+
+```typescript
+// baseURL: Platform.OS === 'android' ? 'http://10.0.2.2:3000/ProDeskApi' : 'http://localhost:3000/ProDeskApi'
+baseURL: 'https://URL_DO_NGROK/ProDeskApi'
+```
+
+Observação: A URL do ngrok muda toda vez que a sessão é reiniciada. Sempre gere um novo APK após reiniciar o ngrok.
+
+### Abra outro terminal
+6. Faça login com a conta da equipe:
+
+```bash
+eas login
+```
+
+7. Com o backend rodando e o ngrok ativo, execute:
+
+```bash
+npm run android-build
+```
+
+Após a build finalizar, o QR code e o link para download do APK estará disponível no terminal e no painel do [EAS](https://expo.dev).
