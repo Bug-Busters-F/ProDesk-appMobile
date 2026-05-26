@@ -152,7 +152,7 @@ export default function TicketDetails() {
         status: 'ESCALATED',
         groupId: selectedCategory.id || selectedCategory._id || 'UUID_PADRAO_DO_GRUPO', 
         escalationLevel: selectedEscalationLevel,
-        category: selectedCategory.name,
+        category: selectedCategory.id,
         whatWasDone: escalateReason,
       });
 
