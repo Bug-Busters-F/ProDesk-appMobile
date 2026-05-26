@@ -21,6 +21,7 @@ export default function TicketDetails() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showEscalateModal, setShowEscalateModal] = useState(false);
   const [selectedEscalationLevel, setSelectedEscalationLevel] = useState<number>(1);
+  const [escalationMode, setEscalationMode] = useState<'LEVEL' | 'CATEGORY' | null>(null);
   const [escalateReason, setEscalateReason] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
@@ -117,10 +118,22 @@ export default function TicketDetails() {
 
   const handleOpenEscalateModal = () => {
     if (ticket?.status !== 'IN_PROGRESS') {
-       Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
-       return;
+      Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
+      return;
     }
+
+    const currentCategory = categories.find(
+      (cat) =>
+        cat.id === ticket.category ||
+        cat._id === ticket.category ||
+        cat.name === ticket.category
+    );
+
+    setSelectedCategory(currentCategory || null);
     setSelectedEscalationLevel(ticket?.escalationLevel ?? 1);
+
+    setEscalationMode(null);
+
     setShowEscalateModal(true);
   };
 
@@ -408,18 +421,34 @@ export default function TicketDetails() {
             <Text className="text-slate-500 font-medium mb-2 text-sm">
               Para qual setor deseja enviar?
             </Text>
+
             <View className="flex-row flex-wrap mb-4">
               {categories.map((cat) => (
                 <TouchableOpacity
                   key={cat.id}
-                  onPress={() => setSelectedCategory(cat)}
+                  disabled={escalationMode === 'LEVEL'}
+                  onPress={() => {
+                    setEscalationMode('CATEGORY');
+                    setSelectedCategory(cat);
+
+                    // ao mudar categoria, nível volta para 1
+                    setSelectedEscalationLevel(1);
+                  }}
                   className={`px-4 py-2 rounded-xl border mr-2 mb-2 ${
-                    selectedCategory?.id === cat.id 
-                      ? 'bg-orange-50 border-orange-500' 
-                      : 'bg-white border-gray-200'
+                    escalationMode === 'LEVEL'
+                      ? 'bg-gray-100 border-gray-200 opacity-50'
+                      : selectedCategory?.id === cat.id
+                        ? 'bg-orange-50 border-orange-500'
+                        : 'bg-white border-gray-200'
                   }`}
                 >
-                  <Text className={selectedCategory?.id === cat.id ? 'text-orange-600 font-bold' : 'text-slate-600'}>
+                  <Text
+                    className={
+                      selectedCategory?.id === cat.id
+                        ? 'text-orange-600 font-bold'
+                        : 'text-slate-600'
+                    }
+                  >
                     {cat.name}
                   </Text>
                 </TouchableOpacity>
@@ -435,11 +464,17 @@ export default function TicketDetails() {
               {[1, 2, 3].map((level) => (
                 <TouchableOpacity
                   key={level}
-                  onPress={() => setSelectedEscalationLevel(level)}
+                  disabled={escalationMode === 'CATEGORY'}
+                  onPress={() => {
+                    setEscalationMode('LEVEL');
+                    setSelectedEscalationLevel(level);
+                  }}
                   className={`px-4 py-2 rounded-xl border mr-2 ${
-                    selectedEscalationLevel === level
-                      ? 'bg-orange-50 border-orange-500'
-                      : 'bg-white border-gray-200'
+                    escalationMode === 'CATEGORY'
+                      ? 'bg-gray-100 border-gray-200 opacity-50'
+                      : selectedEscalationLevel === level
+                        ? 'bg-orange-50 border-orange-500'
+                        : 'bg-white border-gray-200'
                   }`}
                 >
                   <Text
