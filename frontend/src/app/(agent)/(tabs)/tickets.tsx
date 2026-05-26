@@ -131,6 +131,7 @@ const fetchTickets = async () => {
             const description = t.description || t.props?.description;
             const status = t.status || t.props?.status;
             const createdAt = t.createdAt || t.props?.createdAt;
+            const escalationLevel = t.escalationLevel || t.props?.escalationLevel || 1;
 
             return (
               <AgentTicketCard 
@@ -140,6 +141,7 @@ const fetchTickets = async () => {
                   title: title,
                   clientName: 'Cliente', 
                   category: category,
+                  escalationLevel: escalationLevel,
                   timeAgo: new Date(createdAt).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                   description: description,
                   status: mapStatusToUI(status)

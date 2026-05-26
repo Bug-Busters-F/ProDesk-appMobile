@@ -20,6 +20,8 @@ export default function TicketDetails() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showEscalateModal, setShowEscalateModal] = useState(false);
+  const [selectedEscalationLevel, setSelectedEscalationLevel] = useState<number>(1);
+  const [escalationMode, setEscalationMode] = useState<'LEVEL' | 'CATEGORY' | null>(null);
   const [escalateReason, setEscalateReason] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
@@ -116,9 +118,22 @@ export default function TicketDetails() {
 
   const handleOpenEscalateModal = () => {
     if (ticket?.status !== 'IN_PROGRESS') {
-       Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
-       return;
+      Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
+      return;
     }
+
+    const currentCategory = categories.find(
+      (cat) =>
+        cat.id === ticket.category ||
+        cat._id === ticket.category ||
+        cat.name === ticket.category
+    );
+
+    setSelectedCategory(currentCategory || null);
+    setSelectedEscalationLevel(ticket?.escalationLevel ?? 1);
+
+    setEscalationMode(null);
+
     setShowEscalateModal(true);
   };
 
@@ -136,7 +151,8 @@ export default function TicketDetails() {
       await api.put(`/tickets/${id}/status`, {
         status: 'ESCALATED',
         groupId: selectedCategory.id || selectedCategory._id || 'UUID_PADRAO_DO_GRUPO', 
-        category: selectedCategory.name,
+        escalationLevel: selectedEscalationLevel,
+        category: selectedCategory.id,
         whatWasDone: escalateReason,
       });
 
@@ -299,6 +315,18 @@ export default function TicketDetails() {
           </View>
 
           <View className="flex-1 pl-4">
+            <Text className="text-slate-400 text-xs font-bold mb-2">
+              NÍVEL
+            </Text>
+
+            <View className="bg-orange-50 self-start px-3 py-1.5 rounded-lg">
+              <Text className="text-orange-500 font-bold text-sm">
+                N{ticket.escalationLevel || 1}
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-1 pl-4">
             <Text className="text-slate-400 text-xs font-bold mb-2">DATA/HORA</Text>
             <View className="flex-row items-center mt-1">
               <Feather name="calendar" size={16} color="#94a3b8" />
@@ -353,7 +381,7 @@ export default function TicketDetails() {
           >
             <Feather name="trending-up" size={20} color="#f97316" />
             <Text className="text-orange-500 font-bold text-base ml-2">
-              Escalar Chamado
+              Escalonar Chamado
             </Text>
           </TouchableOpacity>
 
@@ -393,19 +421,70 @@ export default function TicketDetails() {
             <Text className="text-slate-500 font-medium mb-2 text-sm">
               Para qual setor deseja enviar?
             </Text>
+
             <View className="flex-row flex-wrap mb-4">
               {categories.map((cat) => (
                 <TouchableOpacity
                   key={cat.id}
-                  onPress={() => setSelectedCategory(cat)}
+                  disabled={escalationMode === 'LEVEL'}
+                  onPress={() => {
+                    setEscalationMode('CATEGORY');
+                    setSelectedCategory(cat);
+
+                    // ao mudar categoria, nível volta para 1
+                    setSelectedEscalationLevel(1);
+                  }}
                   className={`px-4 py-2 rounded-xl border mr-2 mb-2 ${
-                    selectedCategory?.id === cat.id 
-                      ? 'bg-orange-50 border-orange-500' 
-                      : 'bg-white border-gray-200'
+                    escalationMode === 'LEVEL'
+                      ? 'bg-gray-100 border-gray-200 opacity-50'
+                      : selectedCategory?.id === cat.id
+                        ? 'bg-orange-50 border-orange-500'
+                        : 'bg-white border-gray-200'
                   }`}
                 >
-                  <Text className={selectedCategory?.id === cat.id ? 'text-orange-600 font-bold' : 'text-slate-600'}>
+                  <Text
+                    className={
+                      selectedCategory?.id === cat.id
+                        ? 'text-orange-600 font-bold'
+                        : 'text-slate-600'
+                    }
+                  >
                     {cat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* SELEÇÃO DE NÍVEL */}
+            <Text className="text-slate-500 font-medium mb-2 text-sm">
+              Selecione o nível de escalonamento
+            </Text>
+
+            <View className="flex-row mb-4">
+              {[1, 2, 3].map((level) => (
+                <TouchableOpacity
+                  key={level}
+                  disabled={escalationMode === 'CATEGORY'}
+                  onPress={() => {
+                    setEscalationMode('LEVEL');
+                    setSelectedEscalationLevel(level);
+                  }}
+                  className={`px-4 py-2 rounded-xl border mr-2 ${
+                    escalationMode === 'CATEGORY'
+                      ? 'bg-gray-100 border-gray-200 opacity-50'
+                      : selectedEscalationLevel === level
+                        ? 'bg-orange-50 border-orange-500'
+                        : 'bg-white border-gray-200'
+                  }`}
+                >
+                  <Text
+                    className={
+                      selectedEscalationLevel === level
+                        ? 'text-orange-600 font-bold'
+                        : 'text-slate-600'
+                    }
+                  >
+                    N{level}
                   </Text>
                 </TouchableOpacity>
               ))}
