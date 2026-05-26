@@ -23,6 +23,8 @@ export default function TicketDetails() {
   const [escalateReason, setEscalateReason] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [closeSolution, setCloseSolution] = useState('');
 
   const fetchTicket = async () => {
     try {
@@ -74,8 +76,8 @@ export default function TicketDetails() {
     }
 
     try {
-      await api.put(`/tickets/${id}/assignAgent`, {
-        agentId: user.id,
+      await api.put(`/tickets/${id}/status`, {
+        status: 'IN_PROGRESS',
       });
 
       await fetchTicket();
@@ -131,9 +133,10 @@ export default function TicketDetails() {
     }
 
     try {
-      await api.put(`/tickets/${id}/escalate`, {
-        groupId: selectedCategory.id || 'UUID_PADRAO_DO_GRUPO', 
-        category: selectedCategory.id,
+      await api.put(`/tickets/${id}/status`, {
+        status: 'ESCALATED',
+        groupId: selectedCategory.id || selectedCategory._id || 'UUID_PADRAO_DO_GRUPO', 
+        category: selectedCategory.name,
         whatWasDone: escalateReason,
       });
 
@@ -152,8 +155,43 @@ export default function TicketDetails() {
     }
   };
 
-  const handleChangeStatus = () => {
-    Alert.alert('Status', 'Implementar alteração de status');
+  const handleOpenCloseModal = () => {
+    if (ticket?.status === 'CLOSED') {
+      Alert.alert('Aviso', 'Este chamado já foi resolvido/fechado e não pode ser alterado.');
+      return;
+    }
+    if (ticket?.status !== 'IN_PROGRESS') {
+      Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser resolvido. Assuma o atendimento primeiro.');
+      return;
+    }
+    setShowCloseModal(true);
+  };
+
+  const confirmClosing = async () => {
+    if (!closeSolution.trim()) {
+      Alert.alert('Aviso', 'Por favor, descreva a solução aplicada.');
+      return;
+    }
+
+    try {
+      await api.put(`/tickets/${id}/status`, {
+        status: 'CLOSED',
+        solution: closeSolution,
+      });
+
+      setShowCloseModal(false);
+      setCloseSolution('');
+      Alert.alert('Sucesso', 'Chamado resolvido com sucesso!');
+      fetchTicket();
+
+    } catch (error: any) {
+      const apiMessage = error?.response?.data?.message;
+      const errorMessage = Array.isArray(apiMessage) 
+        ? apiMessage.join('\n') 
+        : (apiMessage || 'Falha ao resolver chamado.');
+
+      Alert.alert('Erro de Validação', errorMessage);
+    }
   };
 
   if (loading) {
@@ -320,22 +358,22 @@ export default function TicketDetails() {
             )}
 
           <TouchableOpacity
-            onPress={handleChangeStatus}
+            onPress={handleOpenEscalateModal}
             className="bg-transparent border-2 border-orange-400 py-4 rounded-2xl flex-row justify-center items-center mb-4"
           >
-            <MaterialIcons name="swap-horiz" size={24} color="#f97316" />
+            <Feather name="trending-up" size={20} color="#f97316" />
             <Text className="text-orange-500 font-bold text-base ml-2">
-              Alterar Status
+              Escalar Chamado
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={handleOpenEscalateModal}
+            onPress={handleOpenCloseModal}
             className="bg-transparent border-2 border-red-500 py-4 rounded-2xl flex-row justify-center items-center"
           >
-            <Text className="text-red-500 font-extrabold text-lg mr-2">!</Text>
-            <Text className="text-red-500 font-bold text-base">
-              Escalonar Chamado
+            <Feather name="check-circle" size={20} color="#ef4444" />
+            <Text className="text-red-500 font-bold text-base ml-2">
+              Fechar Chamado
             </Text>
           </TouchableOpacity>
 
@@ -499,6 +537,65 @@ export default function TicketDetails() {
 
           </Pressable>
         </Pressable>
+      </Modal>
+
+
+
+      {/* MODAL DE RESOLVER (FECHAR) CHAMADO */}
+      <Modal
+        visible={showCloseModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCloseModal(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white pt-4 pb-8 px-6 rounded-t-3xl shadow-2xl">
+            
+            {/* Tracinho de arrastar */}
+            <View className="items-center mb-6">
+              <View className="w-12 h-1.5 bg-gray-200 rounded-full" />
+            </View>
+
+            <Text className="text-xl font-bold text-slate-800 mb-4">
+              Resolver Chamado
+            </Text>
+
+            <Text className="text-slate-500 font-medium mb-2 text-sm">
+              Descreva a solução aplicada:
+            </Text>
+            <TextInput
+              className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-slate-700 mb-6 h-32"
+              placeholder="Ex: Reiniciei o roteador e reconfigurei as credenciais..."
+              placeholderTextColor="#94a3b8"
+              multiline
+              textAlignVertical="top"
+              value={closeSolution}
+              onChangeText={setCloseSolution}
+            />
+
+            {/* BOTÕES DE AÇÃO */}
+            <View className="flex-row justify-between">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowCloseModal(false);
+                  setCloseSolution('');
+                }}
+                className="flex-1 bg-gray-100 py-4 rounded-xl items-center mr-2"
+              >
+                <Text className="text-slate-500 font-bold text-base">Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmClosing}
+                className="flex-1 bg-emerald-500 py-4 rounded-xl items-center ml-2 flex-row justify-center"
+              >
+                <Feather name="check" size={18} color="white" className="mr-2" />
+                <Text className="text-white font-bold text-base ml-1">Resolver</Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
