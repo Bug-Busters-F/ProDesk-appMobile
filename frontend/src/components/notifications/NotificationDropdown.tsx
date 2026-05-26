@@ -24,17 +24,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
     }
 
     onClose();
-
-    /**
-     * ESTRATÉGIA DE NAVEGAÇÃO:
-     * O backend envia ticketId e chatId. 
-     * Para abrir a tela de detalhes, precisamos do ticketId.
-     * Em notificações de chat (new_message), o ticketId geralmente vem junto.
-     */
     const ticketId = notification.ticketId;
     const chatId = notification.chatId;
 
-    // Se tivermos o ticketId, é o caminho mais seguro para a tela de detalhes
     if (ticketId) {
         if (user?.role === 'support') {
             router.push({
@@ -48,8 +40,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
             } as any);
         }
     } 
-    // Fallback: Se tivermos apenas o chatId, tentamos usá-lo 
-    // (Pode falhar se o backend não permitir buscar ticket por chatId no endpoint /tickets/:id)
     else if (chatId) {
         if (user?.role === 'support') {
             router.push({
@@ -70,17 +60,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
       className="absolute top-16 right-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100"
       style={{ width: width * 0.85, maxHeight: 500 }}
     >
-      <View className="p-4 border-b border-gray-100 flex-row justify-between items-center">
-        <View>
+      <View className="p-4 border-b border-gray-100">
+        <View className="flex-row justify-between items-center mb-3">
           <Text className="text-lg font-bold text-gray-800">Notificações</Text>
-          {notifications.some(n => !n.read) && (
-             <TouchableOpacity onPress={markAllAsRead}>
-                <Text className="text-xs text-orange-500 mt-1">Marcar todas como lidas</Text>
-             </TouchableOpacity>
-          )}
+          <TouchableOpacity onPress={onClose}>
+            <MaterialIcons name="close" size={24} color="#6B7280" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={onClose}>
-          <MaterialIcons name="close" size={24} color="#6B7280" />
+        
+        <TouchableOpacity onPress={markAllAsRead} className="flex-row items-center">
+          <MaterialIcons name="done-all" size={16} color="#F97316" />
+          <Text className="text-[11px] text-orange-500 font-bold ml-1">Marcar como visualizado</Text>
         </TouchableOpacity>
       </View>
 
@@ -118,15 +108,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
           </View>
         }
       />
-
-      <TouchableOpacity 
-        className="p-3 items-center border-t border-gray-100"
-        onPress={() => {
-            onClose();
-        }}
-      >
-        <Text className="text-orange-500 font-semibold text-sm">Ver todas</Text>
-      </TouchableOpacity>
     </View>
   );
 };

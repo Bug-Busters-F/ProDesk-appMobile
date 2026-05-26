@@ -3,7 +3,6 @@ import { View, Text, FlatList, ScrollView, TouchableOpacity, TouchableWithoutFee
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
 
 const recentTickets = [
   {
@@ -53,16 +52,6 @@ export default function Home() {
                   Métricas e solicitações recentes. 
                 </Text>
               </View>
-              <TouchableOpacity 
-                onPress={() => setShowNotifications(!showNotifications)}
-                className="flex justify-center items-center h-12 w-12 bg-orange-50 rounded-full"
-              >
-                <MaterialIcons name="notifications-none" size={24} color="#FF8C00" />
-              </TouchableOpacity>
-
-              {showNotifications && (
-                <NotificationDropdown onClose={() => setShowNotifications(false)} />
-              )}
             </View>
           
           {/* Cards principais */}

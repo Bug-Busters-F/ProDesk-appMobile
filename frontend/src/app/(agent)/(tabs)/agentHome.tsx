@@ -61,11 +61,7 @@ export default function Dashboard() {
               >
                 <Feather name="bell" size={22} color="#6B7280" />
                 {unreadCount > 0 && (
-                  <View className="absolute top-1 right-1 bg-red-500 rounded-full h-4 w-4 items-center justify-center border-2 border-white">
-                    <Text className="text-white text-[8px] font-bold">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </Text>
-                  </View>
+                  <View className="absolute top-2.5 right-2.5 bg-orange-500 rounded-full h-2.5 w-2.5 border-2 border-gray-100" />
                 )}
               </TouchableOpacity>
 

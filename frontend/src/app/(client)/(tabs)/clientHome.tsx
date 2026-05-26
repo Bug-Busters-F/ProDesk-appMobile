@@ -28,15 +28,11 @@ export default function Home() {
             </View>
             <TouchableOpacity 
               onPress={() => setShowNotifications(!showNotifications)}
-              className="flex justify-center items-center h-12 w-12 bg-orange-50 rounded-full relative"
+              className="bg-gray-100 p-3 rounded-xl relative"
             >
-              <MaterialIcons name="notifications-none" size={24} color="#FF8C00" />
+              <Feather name="bell" size={22} color="#6B7280" />
               {unreadCount > 0 && (
-                <View className="absolute top-2 right-2 bg-red-500 rounded-full h-4 w-4 items-center justify-center border-2 border-orange-50">
-                  <Text className="text-white text-[8px] font-bold">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Text>
-                </View>
+                <View className="absolute top-2.5 right-2.5 bg-orange-500 rounded-full h-2.5 w-2.5 border-2 border-gray-100" />
               )}
             </TouchableOpacity>
 
