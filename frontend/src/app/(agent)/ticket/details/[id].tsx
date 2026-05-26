@@ -164,9 +164,19 @@ export default function TicketDetails() {
     );
   }
 
-  const categoryName = categories.find(cat => (cat.id || cat._id) === ticket.category)?.name || ticket.category || 'Carregando...';
+  if (!ticket) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-[#F8F9FA]">
+        <Text className="text-gray-500">Chamado não encontrado</Text>
+        <TouchableOpacity onPress={() => router.back()} className="mt-4 bg-orange-500 px-6 py-2 rounded-xl">
+            <Text className="text-white font-bold">Voltar</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
-  if (!ticket) return null;
+  const categoryId = ticket?.category;
+  const categoryName = categories.find(cat => (cat.id || cat._id) === categoryId)?.name || categoryId || 'Geral';
 
   return (
     <SafeAreaView className="flex-1 bg-[#F8F9FA]" edges={['top', 'bottom']}>

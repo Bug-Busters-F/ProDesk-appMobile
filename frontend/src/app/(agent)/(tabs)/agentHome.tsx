@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback } from
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 const recentTickets = [
   {
@@ -33,6 +34,7 @@ const recentTickets = [
 
 export default function Dashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount } = useNotifications();
 
   return (
     <SafeAreaView className="flex-1 bg-[#F3F4F6]">
@@ -55,9 +57,16 @@ export default function Dashboard() {
 
               <TouchableOpacity 
                 onPress={() => setShowNotifications(!showNotifications)}
-                className="bg-gray-100 p-3 rounded-xl"
+                className="bg-gray-100 p-3 rounded-xl relative"
               >
                 <Feather name="bell" size={22} color="#6B7280" />
+                {unreadCount > 0 && (
+                  <View className="absolute top-1 right-1 bg-red-500 rounded-full h-4 w-4 items-center justify-center border-2 border-white">
+                    <Text className="text-white text-[8px] font-bold">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
 
               {showNotifications && (

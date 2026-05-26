@@ -4,10 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 export default function Home() {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount } = useNotifications();
 
   return (
     <SafeAreaView className="flex-1 bg-stone-50">
@@ -26,9 +28,16 @@ export default function Home() {
             </View>
             <TouchableOpacity 
               onPress={() => setShowNotifications(!showNotifications)}
-              className="flex justify-center items-center h-12 w-12 bg-orange-50 rounded-full"
+              className="flex justify-center items-center h-12 w-12 bg-orange-50 rounded-full relative"
             >
               <MaterialIcons name="notifications-none" size={24} color="#FF8C00" />
+              {unreadCount > 0 && (
+                <View className="absolute top-2 right-2 bg-red-500 rounded-full h-4 w-4 items-center justify-center border-2 border-orange-50">
+                  <Text className="text-white text-[8px] font-bold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             {showNotifications && (
