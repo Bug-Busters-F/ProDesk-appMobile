@@ -302,6 +302,18 @@ export default function TicketDetails() {
           </View>
 
           <View className="flex-1 pl-4">
+            <Text className="text-slate-400 text-xs font-bold mb-2">
+              NÍVEL
+            </Text>
+
+            <View className="bg-orange-50 self-start px-3 py-1.5 rounded-lg">
+              <Text className="text-orange-500 font-bold text-sm">
+                N{ticket.escalationLevel || 1}
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-1 pl-4">
             <Text className="text-slate-400 text-xs font-bold mb-2">DATA/HORA</Text>
             <View className="flex-row items-center mt-1">
               <Feather name="calendar" size={16} color="#94a3b8" />
@@ -356,7 +368,7 @@ export default function TicketDetails() {
           >
             <Feather name="trending-up" size={20} color="#f97316" />
             <Text className="text-orange-500 font-bold text-base ml-2">
-              Escalar Chamado
+              Escalonar Chamado
             </Text>
           </TouchableOpacity>
 
