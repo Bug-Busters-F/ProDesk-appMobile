@@ -130,7 +130,10 @@ export default function Tickets() {
                   if (chatId) {
                     router.push({
                       pathname: '/(client)/ticket/[id]',
-                      params: { id: chatId }
+                      params: { 
+                        id: chatId,
+                        ticketId: ticket._id 
+                      }
                     });
                   } else {
                     Alert.alert('Aviso', 'O chat deste chamado ainda não foi criado.');

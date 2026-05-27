@@ -3,14 +3,14 @@ import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Ima
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-
 import { useAuth, api } from '@/contexts/AuthContext';
+import { io } from 'socket.io-client';
 
 export default function TicketDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-
+  
   const [ticket, setTicket] = useState<any>(null);
   const [clientInfo, setClientInfo] = useState<{ name: string, company: string, profileImage?: string }>({
     name: 'Carregando...',
@@ -33,6 +33,7 @@ export default function TicketDetails() {
       const res = await api.get(`/tickets/${id}`);
       const ticketData = res.data;
       setTicket(ticketData);
+
       if (ticketData.clientId) {
         try {
           const userRes = await api.get(`/user/${ticketData.clientId}`);
@@ -67,11 +68,35 @@ export default function TicketDetails() {
     fetchCategories(); 
   }, []);
 
+  const sendSystemMessage = async (messageText: string) => {
+    try {
+      const res = await api.get(`/chat/ticket/${id}`);
+      const chatId = res.data?.id || res.data?._id;
+      
+      if (chatId && user?.token) {
+        const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://10.0.2.2:3000';
+        const tempSocket = io(socketUrl, {
+          transports: ['websocket'],
+          auth: { token: user.token },
+          extraHeaders: { Authorization: `Bearer ${user.token}` }
+        });
+        
+        tempSocket.on('connect', () => {
+          tempSocket.emit('enviarMensagem', { chatId, content: messageText });
+          setTimeout(() => tempSocket.disconnect(), 1000);
+        });
+      }
+    } catch (err) {
+      console.log("Erro ao enviar notificação automática:", err);
+    }
+  };
+
   const handleAssignAgent = async () => {
     if (!user) {
       Alert.alert('Erro', 'Usuário não autenticado');
       return;
     }
+
     if (ticket?.agentId && ticket.agentId !== user.id) {
       Alert.alert('Aviso', 'Este chamado já está com outro atendente');
       return;
@@ -81,10 +106,19 @@ export default function TicketDetails() {
       await api.put(`/tickets/${id}/status`, {
         status: 'IN_PROGRESS',
       });
-
       await fetchTicket();
+      let realName = user.name;
+      try {
+        const userRes = await api.get(`/user/${user.id}`);
+        if (userRes.data && userRes.data.name) {
+           realName = userRes.data.name;
+        }
+      } catch (err) {
+        console.log("Não foi possível buscar o nome real do atendente", err);
+      }
+      await sendSystemMessage(`👋 Olá! O especialista ${realName} acaba de assumir o seu chamado. Como podemos ajudar?`);
+      
       handleOpenChat();
-
     } catch (error: any) {
       console.log(error?.response?.data || error);
       Alert.alert('Erro', 'Não foi possível assumir o chamado');
@@ -96,6 +130,7 @@ export default function TicketDetails() {
       setShowWarningModal(true);
       return;
     }
+
     try {
       const res = await api.get(`/chat/ticket/${id}`);
       const chatData = res.data;
@@ -107,7 +142,7 @@ export default function TicketDetails() {
       }
 
       router.push({
-        pathname: '/(client)/ticket/[id]',
+        pathname: '/(agent)/ticket/[id]', 
         params: { id: chatId }
       });
 
@@ -117,6 +152,7 @@ export default function TicketDetails() {
   };
 
   const handleOpenEscalateModal = () => {
+
     if (ticket?.status !== 'IN_PROGRESS') {
       Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
       return;
@@ -158,15 +194,17 @@ export default function TicketDetails() {
 
       setShowEscalateModal(false);
       setEscalateReason('');
+      
+      await sendSystemMessage(`⚠️ [SISTEMA] Seu chamado foi escalonado para a fila da categoria "${selectedCategory.name}". Em breve um novo especialista dará andamento.`);
+      
       Alert.alert('Sucesso', 'Chamado escalonado com sucesso!');
       fetchTicket();
 
     } catch (error: any) {
       const apiMessage = error?.response?.data?.message;
       const errorMessage = Array.isArray(apiMessage) 
-        ? apiMessage.join('\n') 
-        : (apiMessage || 'Falha ao escalonar chamado.');
-
+         ? apiMessage.join('\n') 
+         : (apiMessage || 'Falha ao escalonar chamado.');
       Alert.alert('Erro de Validação', errorMessage);
     }
   };
@@ -224,31 +262,26 @@ export default function TicketDetails() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#F8F9FA]" edges={['top', 'bottom']}>
-
       {/* HEADER */}
       <View className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100 bg-[#F8F9FA]">
         <TouchableOpacity onPress={() => router.back()} className="p-2">
           <Feather name="arrow-left" size={24} color="#1e293b" />
         </TouchableOpacity>
-
         <View className="items-center">
           <Text className="text-slate-800 font-bold text-lg">Detalhes do Chamado</Text>
           <Text className="text-orange-500 font-bold text-sm">#{ticket.id}</Text>
         </View>
-
         <TouchableOpacity onPress={() => setIsMenuVisible(true)} className="p-2">
           <Feather name="more-vertical" size={24} color="#1e293b" />
         </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-
         {/* STATUS + TITULO */}
         <View className="px-6 pt-8 pb-6 flex-row items-start border-b border-gray-100">
           <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mr-4">
             <MaterialCommunityIcons name="ticket-confirmation-outline" size={32} color="#f97316" />
           </View>
-
           <View className="flex-1">
             <View className="flex-row items-center mb-1.5">
               <View className="w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
@@ -256,11 +289,9 @@ export default function TicketDetails() {
                 STATUS: {ticket.status}
               </Text>
             </View>
-
             <Text className="text-xl font-bold text-slate-800 mb-1 leading-6">
               {ticket.title || 'Chamado'}
             </Text>
-
             <Text className="text-slate-400 text-sm">
               Alta Prioridade
             </Text>
@@ -281,7 +312,6 @@ export default function TicketDetails() {
               </Text>
             </View>
           </View>
-
           <View className="flex-1 pl-4">
             <Text className="text-slate-400 text-xs font-bold mb-2">EMPRESA</Text>
             <View className="flex-row items-center">
@@ -313,7 +343,6 @@ export default function TicketDetails() {
               </Text>
             </View>
           </View>
-
           <View className="flex-1 pl-4">
             <Text className="text-slate-400 text-xs font-bold mb-2">
               NÍVEL
@@ -339,7 +368,6 @@ export default function TicketDetails() {
 
         {/* BOTÕES */}
         <View className="px-6 pb-10">
-
           {ticket.status === 'OPEN' || !ticket.agentId ? (
             <TouchableOpacity
               onPress={handleAssignAgent}
@@ -394,9 +422,7 @@ export default function TicketDetails() {
               Fechar Chamado
             </Text>
           </TouchableOpacity>
-
         </View>
-
       </ScrollView>
 
       <Modal
@@ -408,7 +434,6 @@ export default function TicketDetails() {
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white pt-4 pb-8 px-6 rounded-t-3xl shadow-2xl">
             
-            {/* Tracinho de arrastar */}
             <View className="items-center mb-6">
               <View className="w-12 h-1.5 bg-gray-200 rounded-full" />
             </View>
@@ -454,6 +479,7 @@ export default function TicketDetails() {
                 </TouchableOpacity>
               ))}
             </View>
+
 
             {/* SELEÇÃO DE NÍVEL */}
             <Text className="text-slate-500 font-medium mb-2 text-sm">
