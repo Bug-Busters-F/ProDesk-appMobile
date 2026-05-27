@@ -5,6 +5,7 @@ export type MessageType = {
   id: string;
   text: string;
   sender: 'USER' | 'BOT' | 'AGENT';
+  senderRole?: 'support' | 'client';
   agentName?: string;
   time: string;
   attachmentUrl?: string;
@@ -23,11 +24,25 @@ export function MessageBubble({ message }: Props) {
       Linking.openURL(message.attachmentUrl);
     }
   };
-
+  
   return (
     <View className={`mb-6 ${isUser ? 'items-end' : 'items-start'}`}>
-      <Text className="text-slate-400 text-xs mb-1 mx-2">
-        {isUser ? `Você • ${message.time}` : `${message.agentName || 'Assistente'} • ${message.time}`}
+      <Text className="text-slate-400 text-xs mb-1 mx-2 flex-row items-center">
+        {isUser ? (
+          `Você • ${message.time}`
+        ) : (
+          <View className="flex-row items-center">
+            <Text className="font-bold text-slate-600">{message.agentName}</Text>
+            
+            {message.senderRole === 'support' && (
+              <View className="ml-2 px-1.5 py-0.5 bg-orange-100 rounded">
+                <Text className="text-[9px] font-bold text-orange-600 uppercase">Atendente</Text>
+              </View>
+            )}
+            
+            <Text className="text-slate-400 ml-1">• {message.time}</Text>
+          </View>
+        )}
       </Text>
       
       <View className="flex-row items-end">

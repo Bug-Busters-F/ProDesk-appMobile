@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { io, Socket } from 'socket.io-client';
-import { MessageBubble, MessageType } from '../../../components/chat/MessageBubble';
+import { MessageBubble, MessageType } from '@/components/chat/MessageBubble';
 import { useAuth } from '@/contexts/AuthContext';
 import * as DocumentPicker from 'expo-document-picker';
 import api, { uploadFile } from '@/services/api';
@@ -29,8 +29,9 @@ export default function TicketChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
   const hasSentInitialMessage = useRef(false);
-  
 
+  const namesCache = useRef<Record<string, string>>({});
+  
   const handlePickAndSendFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
     
@@ -59,8 +60,6 @@ export default function TicketChatScreen() {
             const chatResponse = await api.post('/chat', {
                 ticketId: routeId,
                 clientId: user?.id,
-                agentId: '507f1f77bcf86cd799439033', 
-                groupId: '507f1f77bcf86cd799439034', 
             });
             
             const chatData = chatResponse.data;
@@ -85,7 +84,7 @@ export default function TicketChatScreen() {
 
   useEffect(() => {
     if (!user?.token || !realChatId) return;
-    const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://SEU_IPV4:3000';
+    const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://10.0.2.2:3000';
 
     socketRef.current = io(socketUrl, {
       transports: ['websocket'],
@@ -116,27 +115,71 @@ export default function TicketChatScreen() {
       }
     });
 
-    socket.on('historicoChat', (data: { chatId: string, mensagens: any[] }) => {
-      const history = data.mensagens.map((msg) => ({
-        id: msg._id || msg.id,
-        text: msg.content,
-        attachmentUrl: msg.attachmentUrl, 
-        type: msg.type, 
-        sender: msg.senderId === user.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
-        time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      } as MessageType)); 
+    socket.on('historicoChat', async (data: { chatId: string, mensagens: any[] }) => {
+      const uniqueIds = [...new Set(data.mensagens.map(m => m.senderId).filter(Boolean))];
+
+      await Promise.all(uniqueIds.map(async (uid: any) => {
+        if (!namesCache.current[uid]) {
+          try {
+            const res = await api.get(`/user/${uid}`);
+            namesCache.current[uid] = res.data.name.split(' ')[0];
+            namesCache.current[`role_${uid}`] = res.data.role;
+          } catch(e) {
+            namesCache.current[uid] = 'Usuário';
+            namesCache.current[`role_${uid}`] = 'client';
+          }
+        }
+      }));
+
+      const history = data.mensagens.map((msg) => {
+        const isMe = msg.senderId === user.id;
+        const senderName = msg.isSystemMessage ? 'Sistema' : (namesCache.current[msg.senderId] || 'Usuário');
+        const senderRole = namesCache.current[`role_${msg.senderId}`] || 'client'; 
+
+        return {
+          id: msg._id || msg.id,
+          text: msg.content,
+          attachmentUrl: msg.attachmentUrl, 
+          type: msg.type, 
+          sender: isMe ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
+          senderRole: senderRole as any, 
+          agentName: isMe ? undefined : senderName,
+          time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        } as MessageType;
+      });
       
       setMessages(history);
       setIsLoadingHistory(false);
     });
 
-    socket.on('novaMensagem', (msg: any) => {
+    socket.on('novaMensagem', async (msg: any) => {
+      const isMe = msg.senderId === user.id;
+      let senderName = 'Usuário';
+      let senderRole = 'client';
+
+      if (!isMe && !msg.isSystemMessage) {
+          if (!namesCache.current[msg.senderId]) {
+            try {
+              const res = await api.get(`/user/${msg.senderId}`);
+              namesCache.current[msg.senderId] = res.data.name.split(' ')[0];
+              namesCache.current[`role_${msg.senderId}`] = res.data.role;
+            } catch(e) {
+              namesCache.current[msg.senderId] = 'Usuário';
+              namesCache.current[`role_${msg.senderId}`] = 'client';
+            }
+          }
+          senderName = namesCache.current[msg.senderId] || 'Usuário';
+          senderRole = namesCache.current[`role_${msg.senderId}`] || 'client';
+      }
+
       setMessages((prev) => [...prev, {
         id: msg._id || msg.id,
         text: msg.content,
         attachmentUrl: msg.attachmentUrl, 
         type: msg.type,
-        sender: msg.senderId === user.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
+        sender: isMe ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
+        senderRole: senderRole as any, 
+        agentName: isMe ? undefined : senderName,
         time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       } as MessageType]);
     });
