@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { AgentTicketCard, AgentTicketStatus } from '@/components/tickets/AgentTicketCard';
 import api from '@/services/api';
 
@@ -51,9 +51,13 @@ const fetchTickets = async () => {
       setRefreshing(false);
     }
   };
-  useEffect(() => {
-    fetchTickets();
-  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTickets();
+    }, [])
+  );
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchTickets();
@@ -64,6 +68,7 @@ const fetchTickets = async () => {
       case 'OPEN': return 'PENDENTE';
       case 'IN_PROGRESS': return 'EM ATENDIMENTO';
       case 'ESCALATED': return 'ESCALONADO';
+      case 'CLOSED': return 'RESOLVIDO';
       default: return 'PENDENTE';
     }
   };
@@ -72,6 +77,7 @@ const fetchTickets = async () => {
     if (activeFilter === 'Todos') return true;
     if (activeFilter === 'Pendentes') return ticket.status === 'OPEN';
     if (activeFilter === 'Em atendimento') return ticket.status === 'IN_PROGRESS';
+    if (activeFilter === 'Resolvidos') return ticket.status === 'CLOSED';
     return true;
   });
 
@@ -96,7 +102,7 @@ const fetchTickets = async () => {
         }
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 h-10">
-          {['Todos', 'Pendentes', 'Em atendimento'].map((filter) => {
+          {['Todos', 'Pendentes', 'Em atendimento', 'Resolvidos'].map((filter) => {
             const isActive = activeFilter === filter;
             return (
               <TouchableOpacity
@@ -125,6 +131,7 @@ const fetchTickets = async () => {
             const description = t.description || t.props?.description;
             const status = t.status || t.props?.status;
             const createdAt = t.createdAt || t.props?.createdAt;
+            const escalationLevel = t.escalationLevel || t.props?.escalationLevel || 1;
 
             return (
               <AgentTicketCard 
@@ -134,6 +141,7 @@ const fetchTickets = async () => {
                   title: title,
                   clientName: 'Cliente', 
                   category: category,
+                  escalationLevel: escalationLevel,
                   timeAgo: new Date(createdAt).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                   description: description,
                   status: mapStatusToUI(status)
