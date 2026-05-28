@@ -1,7 +1,9 @@
-import React from "react";
-import { View, Text, FlatList } from "react-native";
+import React, { useState } from "react";
+import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 const recentTickets = [
   {
@@ -31,28 +33,42 @@ const recentTickets = [
 ];
 
 export default function Dashboard() {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount } = useNotifications();
+
   return (
     <SafeAreaView className="flex-1 bg-[#F3F4F6]">
-      <View className="flex-1 px-6 pt-5">
+      <TouchableWithoutFeedback onPress={() => setShowNotifications(false)}>
+        <View className="flex-1 px-6 pt-5">
 
-        <View className="bg-white rounded-3xl p-5 mb-6 shadow-sm">
-          <View className="flex-row justify-between items-center mb-5">
-            
-            <View className="flex-row items-center">
-              <View>
-                <Text className="text-xl font-bold text-gray-800">
-                  Olá, Atendente
-                </Text>
-                <Text className="text-orange-500 text-base font-medium mt-1">
-                  Setor: Suporte Técnico
-                </Text>
+          <View className="bg-white rounded-3xl p-5 mb-6 shadow-sm relative z-50">
+            <View className="flex-row justify-between items-center mb-5">
+              
+              <View className="flex-row items-center">
+                <View>
+                  <Text className="text-xl font-bold text-gray-800">
+                    Olá, Atendente
+                  </Text>
+                  <Text className="text-orange-500 text-base font-medium mt-1">
+                    Setor: Suporte Técnico
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <View className="bg-gray-100 p-3 rounded-xl">
-              <Feather name="bell" size={22} color="#6B7280" />
+              <TouchableOpacity 
+                onPress={() => setShowNotifications(!showNotifications)}
+                className="bg-gray-100 p-3 rounded-xl relative"
+              >
+                <Feather name="bell" size={22} color="#6B7280" />
+                {unreadCount > 0 && (
+                  <View className="absolute top-2.5 right-2.5 bg-orange-500 rounded-full h-2.5 w-2.5 border-2 border-gray-100" />
+                )}
+              </TouchableOpacity>
+
+              {showNotifications && (
+                <NotificationDropdown onClose={() => setShowNotifications(false)} />
+              )}
             </View>
-          </View>
 
           {/* Cards */}
           <View className="flex-row flex-wrap justify-between">
@@ -149,6 +165,7 @@ export default function Dashboard() {
           )}
         />
       </View>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

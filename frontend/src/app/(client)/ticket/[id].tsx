@@ -81,18 +81,24 @@ export default function TicketChatScreen() {
             const chatData = chatResponse.data;
             finalChatId = chatData.id || chatData._id;
         } else {
-           finalChatId = routeId as string;
+           try {
+             const chatResponse = await api.get(`/chat/ticket/${routeId}`);
+             const chatData = chatResponse.data;
+             finalChatId = chatData.id || chatData._id;
+           } catch (error) {
+             console.log('ID da rota não é um TicketID válido ou chat não encontrado, tentando como ChatID');
+             finalChatId = routeId as string;
+           }
         }
 
         if (finalChatId) {
            setRealChatId(finalChatId);
-           if (isNewTicket !== 'true') {
-             checkTicketStatus(finalChatId);
-           }
+           checkTicketStatus(finalChatId);
         }
       } catch (error: any) {
         console.log('ERRO API CHAT:', error?.response?.data || error.message);
-        Alert.alert('Erro', 'Não foi possível criar a sala de chat.');
+        setIsLoadingHistory(false); 
+        Alert.alert('Erro', 'Não foi possível carregar o chat deste chamado.');
       }
     };
 
