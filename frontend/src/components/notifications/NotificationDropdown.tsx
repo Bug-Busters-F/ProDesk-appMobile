@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, FlatList, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useRouter } from 'expo-router';
@@ -24,6 +24,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
     }
 
     onClose();
+
+    if (notification.type === 'access_request') {
+      router.push('/(admin)/accessRequests');
+      return;
+    }
+
     const ticketId = notification.ticketId;
     const chatId = notification.chatId;
 
@@ -74,40 +80,40 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          const timeLabel = formatDistanceToNow(new Date(item.createdAt), {
-            addSuffix: true,
-            locale: ptBR,
-          });
-
-          return (
-            <TouchableOpacity 
-              onPress={() => handleNotificationPress(item)}
-              className={`p-4 border-b border-gray-50 ${item.read ? 'bg-white' : 'bg-orange-50/50'}`}
-            >
-              <View className="flex-row justify-between items-start mb-1">
-                <Text className={`text-sm flex-1 mr-2 ${item.read ? 'font-medium text-gray-700' : 'font-bold text-gray-900'}`}>
-                  {item.title}
-                </Text>
-                <Text className="text-[10px] text-gray-400">{timeLabel}</Text>
-              </View>
-              <Text className="text-xs text-gray-500 leading-4">{item.message}</Text>
-              {!item.read && (
-                <View className="absolute right-2 bottom-2 w-2 h-2 bg-orange-500 rounded-full" />
-              )}
-            </TouchableOpacity>
-          );
-        }}
-        ListEmptyComponent={
+      <ScrollView>
+        {notifications.length === 0 ? (
           <View className="p-8 items-center">
             <MaterialIcons name="notifications-none" size={40} color="#E5E7EB" />
             <Text className="text-gray-400 mt-2">Nenhuma notificação</Text>
           </View>
-        }
-      />
+        ) : (
+          notifications.map((item) => {
+            const timeLabel = formatDistanceToNow(new Date(item.createdAt), {
+              addSuffix: true,
+              locale: ptBR,
+            });
+
+            return (
+              <TouchableOpacity 
+                key={item.id}
+                onPress={() => handleNotificationPress(item)}
+                className={`p-4 border-b border-gray-50 ${item.read ? 'bg-white' : 'bg-orange-50/50'}`}
+              >
+                <View className="flex-row justify-between items-start mb-1">
+                  <Text className={`text-sm flex-1 mr-2 ${item.read ? 'font-medium text-gray-700' : 'font-bold text-gray-900'}`}>
+                    {item.title}
+                  </Text>
+                  <Text className="text-[10px] text-gray-400">{timeLabel}</Text>
+                </View>
+                <Text className="text-xs text-gray-500 leading-4">{item.message}</Text>
+                {!item.read && (
+                  <View className="absolute right-2 bottom-2 w-2 h-2 bg-orange-500 rounded-full" />
+                )}
+              </TouchableOpacity>
+            );
+          })
+        )}
+      </ScrollView>
     </View>
   );
 };

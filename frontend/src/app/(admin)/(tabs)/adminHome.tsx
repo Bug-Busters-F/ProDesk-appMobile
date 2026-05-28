@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { View, Text, FlatList, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 const recentTickets = [
   {
@@ -34,6 +36,7 @@ const recentTickets = [
 export default function Home() {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount } = useNotifications();
 
   return (
     <SafeAreaView className="flex-1 bg-stone-50">
@@ -52,6 +55,20 @@ export default function Home() {
                   Métricas e solicitações recentes. 
                 </Text>
               </View>
+
+              <TouchableOpacity 
+                onPress={() => setShowNotifications(!showNotifications)}
+                className="bg-gray-200/50 p-3 rounded-xl relative"
+              >
+                <Feather name="bell" size={22} color="#6B7280" />
+                {unreadCount > 0 && (
+                  <View className="absolute top-2.5 right-2.5 bg-orange-500 rounded-full h-2.5 w-2.5 border-2 border-stone-50" />
+                )}
+              </TouchableOpacity>
+
+              {showNotifications && (
+                <NotificationDropdown onClose={() => setShowNotifications(false)} />
+              )}
             </View>
           
           {/* Cards principais */}
@@ -211,13 +228,9 @@ export default function Home() {
             </TouchableOpacity>
           </View>
 
-          <FlatList
-            data={recentTickets}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between shadow-sm">
+          <View>
+            {recentTickets.map((item) => (
+              <View key={item.id} className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between shadow-sm">
 
                 <View className="flex-row items-center flex-1">
                   <View
@@ -250,8 +263,8 @@ export default function Home() {
                   </Text>
                 </View>
               </View>
-            )}
-          />
+            ))}
+          </View>
           <View className="h-10" />
         </View>
       </ScrollView>

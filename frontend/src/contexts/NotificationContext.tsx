@@ -23,10 +23,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const appState = useRef(AppState.currentState);
 
   const sortedNotifications = useMemo(() => {
-    return [...notifications].sort((a, b) => 
+    let filtered = [...notifications];
+    
+    if (user?.role === 'admin') {
+      filtered = filtered.filter(n => n.type === 'access_request');
+    }
+
+    return filtered.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [notifications]);
+  }, [notifications, user?.role]);
 
   const unreadCount = useMemo(() => {
     return sortedNotifications.filter(n => !n.read).length;

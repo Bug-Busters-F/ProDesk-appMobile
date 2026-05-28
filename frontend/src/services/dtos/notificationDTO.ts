@@ -1,4 +1,4 @@
-export type NotificationType = 'ticket_open' | 'ticket_closed' | 'new_message';
+export type NotificationType = 'ticket_open' | 'ticket_closed' | 'new_message' | 'access_request';
 
 export interface NotificationDTO {
   id: string;
