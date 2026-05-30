@@ -37,19 +37,19 @@ const STATUS_MAP = {
   [TicketStatus.OPEN]: {
     label: 'ABERTO',
     color: 'text-amber-600',
-    bg: 'bg-amber-50',
+    bg: 'bg-amber-50  mr-8',
     icon: 'clock-outline', 
   },
   [TicketStatus.IN_PROGRESS]: {
     label: 'EM ATENDIMENTO',
     color: 'text-blue-600',
-    bg: 'bg-blue-50',
+    bg: 'bg-blue-50  mr-8',
     icon: 'message-text-outline',
   },
   [TicketStatus.ESCALATED]: {
     label: 'ESCALADO',
     color: 'text-orange-600',
-    bg: 'bg-orange-50',
+    bg: 'bg-orange-50  mr-8',
     icon: 'alert-circle-outline',
   },
   [TicketStatus.CLOSED]: {
