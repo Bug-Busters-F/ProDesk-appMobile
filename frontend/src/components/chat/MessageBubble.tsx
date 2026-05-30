@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, Linking, TouchableOpacity } from 'react-native';
+import ImageView from 'react-native-image-viewing';
 
 export type MessageType = {
   id: string;
@@ -18,11 +19,20 @@ type Props = {
 
 export function MessageBubble({ message }: Props) {
   const isUser = message.sender === 'USER';
+  const [imageVisible, setImageVisible] = useState(false);
   
   const handleOpenAttachment = () => {
-    if (message.attachmentUrl) {
-      Linking.openURL(message.attachmentUrl);
-    }
+  if (!message.attachmentUrl) return;
+
+  if (
+    message.type === 'IMAGE' ||
+    message.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i)
+  ) {
+    setImageVisible(true);
+    return;
+  }
+
+  Linking.openURL(message.attachmentUrl);
   };
   
   return (
@@ -65,11 +75,13 @@ export function MessageBubble({ message }: Props) {
             <View className="mb-2">
               {/* CORREÇÃO: Forçando renderizar como imagem se o type for IMAGE */}
               {message.type === 'IMAGE' || message.attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/i) ? (
-                <Image 
-                  source={{ uri: message.attachmentUrl }} 
-                  style={{ width: 200, height: 200, borderRadius: 8 }}
-                  resizeMode="cover"
-                />
+                <TouchableOpacity onPress={() => handleOpenAttachment()}>
+                  <Image
+                    source={{ uri: message.attachmentUrl }}
+                    style={{ width: 200, height: 200, borderRadius: 8 }}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
               ) : (
                 <TouchableOpacity 
                   onPress={handleOpenAttachment}
@@ -84,6 +96,16 @@ export function MessageBubble({ message }: Props) {
           <Text className="text-slate-800 leading-5">{message.text}</Text>
         </View>
       </View>
+      <ImageView
+        images={
+          message.attachmentUrl
+            ? [{ uri: message.attachmentUrl }]
+            : []
+        }
+        imageIndex={0}
+        visible={imageVisible}
+        onRequestClose={() => setImageVisible(false)}
+      />
     </View>
   );
 }

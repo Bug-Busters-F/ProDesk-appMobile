@@ -49,21 +49,25 @@ export default function TicketChatScreen() {
   };
 
   const handlePickAndSendFile = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-    
+    const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        multiple: true,
+    });
+
     if (!result.canceled && realChatId) {
-        const file = result.assets[0];
-        const fileUrl = await uploadFile(file.uri, file.name);
-        
-        const isImage = file.name.match(/\.(jpeg|jpg|gif|png)$/i);
-        const messageType = isImage ? 'IMAGE' : 'FILE';
-        
-        socketRef.current?.emit('enviarMensagem', { 
-            chatId: realChatId, 
-            content: isImage ? 'Imagem enviada' : 'Arquivo enviado',
-            attachmentUrl: fileUrl,
-            type: messageType 
-        });
+        for (const file of result.assets) {
+            const fileUrl = await uploadFile(file.uri, file.name);
+
+            const isImage = file.name.match(/\.(jpeg|jpg|gif|png)$/i);
+            const messageType = isImage ? 'IMAGE' : 'FILE';
+
+            socketRef.current?.emit('enviarMensagem', {
+                chatId: realChatId,
+                content: isImage ? 'Imagem enviada' : 'Arquivo enviado',
+                attachmentUrl: fileUrl,
+                type: messageType,
+            });
+        }
     }
   };
 
