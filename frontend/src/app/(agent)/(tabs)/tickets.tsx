@@ -29,10 +29,17 @@ const fetchTickets = async () => {
       });
       const formattedTickets = ticketsData.map((t: any) => {
         const rawCategory = t.category || t.props?.category;
+        let categoryName = 'Sem Categoria';
+
+        if (typeof rawCategory === 'object' && rawCategory !== null) {
+          categoryName = rawCategory.name || 'Sem Categoria';
+        } else if (rawCategory) {
+          categoryName = categoryDictionary[rawCategory] || rawCategory;
+        }
         
         return {
           ...t,
-          category: categoryDictionary[rawCategory] || rawCategory || 'Sem Categoria'
+          categoryName
         };
       });
 
@@ -63,8 +70,9 @@ const fetchTickets = async () => {
     fetchTickets();
   };
 
-  const mapStatusToUI = (backendStatus: string): AgentTicketStatus => {
-    switch(backendStatus) {
+  const mapStatusToUI = (backendStatus: any): AgentTicketStatus => {
+    const statusKey = typeof backendStatus === 'object' ? backendStatus.id : backendStatus;
+    switch(statusKey) {
       case 'OPEN': return 'PENDENTE';
       case 'IN_PROGRESS': return 'EM ATENDIMENTO';
       case 'ESCALATED': return 'ESCALONADO';
@@ -74,10 +82,11 @@ const fetchTickets = async () => {
   };
 
   const filteredTickets = tickets.filter(ticket => {
+    const statusKey = typeof ticket.status === 'object' ? ticket.status.id : ticket.status;
     if (activeFilter === 'Todos') return true;
-    if (activeFilter === 'Pendentes') return ticket.status === 'OPEN';
-    if (activeFilter === 'Em atendimento') return ticket.status === 'IN_PROGRESS';
-    if (activeFilter === 'Resolvidos') return ticket.status === 'CLOSED';
+    if (activeFilter === 'Pendentes') return statusKey === 'OPEN';
+    if (activeFilter === 'Em atendimento') return statusKey === 'IN_PROGRESS';
+    if (activeFilter === 'Resolvidos') return statusKey === 'CLOSED';
     return true;
   });
 
@@ -140,7 +149,7 @@ const fetchTickets = async () => {
                   id: ticketId,
                   title: title,
                   clientName: 'Cliente', 
-                  category: category,
+                  category: t.categoryName,
                   escalationLevel: escalationLevel,
                   timeAgo: new Date(createdAt).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                   description: description,

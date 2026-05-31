@@ -20,10 +20,10 @@ export default function Home() {
           <View className="mb-6 pb-3 flex flex-row justify-between relative z-50">
             <View>
               <Text className="text-2xl font-bold text-gray-800">
-                Olá, Cliente
+                Central de Ajuda
               </Text>
               <Text className="text-gray-400 mt-1">
-                Como podemos ajudar hoje?
+                Como podemos auxiliar você hoje?
               </Text>
             </View>
             <TouchableOpacity 

@@ -42,41 +42,25 @@ export default function Dashboard() {
     fetchData();
   }, [fetchData]);
 
-  const userCategories = useMemo(() => {
-    if (!user?.categories || categories.length === 0) return "Geral";
-    return categories
-      .filter(cat => user.categories?.includes(cat.id))
-      .map(cat => cat.name)
-      .join(", ") || "Suporte";
-  }, [user, categories]);
-
-  const metrics = useMemo(() => {
-    return {
-      pending: tickets.filter(t => t.status === TicketStatus.OPEN).length,
-      inProgress: tickets.filter(t => t.status === TicketStatus.IN_PROGRESS).length,
-      escalated: tickets.filter(t => t.status === TicketStatus.ESCALATED).length,
-      resolved: tickets.filter(t => t.status === TicketStatus.CLOSED).length,
-    };
-  }, [tickets]);
-
   const recentTickets = useMemo(() => {
     return [...tickets]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 3);
   }, [tickets]);
 
-  const getStatusInfo = (status: TicketStatus) => {
-    switch (status) {
+  const getStatusInfo = (status: TicketStatus | { id: string, name: string }) => {
+    const statusKey = typeof status === 'object' ? status.id : status;
+    switch (statusKey) {
       case TicketStatus.OPEN:
-        return { label: "Pendente", colorClass: "border-orange-400" };
+        return { label: typeof status === 'object' ? status.name : "Pendente", colorClass: "border-orange-400" };
       case TicketStatus.IN_PROGRESS:
-        return { label: "Em atendimento", colorClass: "border-blue-400" };
+        return { label: typeof status === 'object' ? status.name : "Em atendimento", colorClass: "border-blue-400" };
       case TicketStatus.ESCALATED:
-        return { label: "Escalonado", colorClass: "border-red-400" };
+        return { label: typeof status === 'object' ? status.name : "Escalonado", colorClass: "border-red-400" };
       case TicketStatus.CLOSED:
-        return { label: "Resolvido", colorClass: "border-green-400" };
+        return { label: typeof status === 'object' ? status.name : "Resolvido", colorClass: "border-green-400" };
       default:
-        return { label: status, colorClass: "border-gray-400" };
+        return { label: typeof status === 'object' ? status.name : status, colorClass: "border-gray-400" };
     }
   };
 
@@ -99,10 +83,10 @@ export default function Dashboard() {
               <View className="flex-row items-center">
                 <View>
                   <Text className="text-xl font-bold text-gray-800">
-                    Olá, {user?.name?.split(' ')[0] || 'Atendente'}
+                    Painel de Atendimento
                   </Text>
                   <Text className="text-orange-500 text-base font-medium mt-1">
-                    Setor: {userCategories}
+                    Visão Geral de Chamados
                   </Text>
                 </View>
               </View>
@@ -122,7 +106,7 @@ export default function Dashboard() {
               )}
             </View>
 
-          {/* Cards de Métricas */}
+          {/* Cards de Métricas (Dados Mockados conforme solicitado) */}
           <View className="flex-row flex-wrap justify-between">
             
             {/* Pendentes */}
@@ -131,7 +115,7 @@ export default function Dashboard() {
                 Pendentes
               </Text>
               <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-3xl font-bold text-gray-800">{metrics.pending}</Text>
+                <Text className="text-3xl font-bold text-gray-800">12</Text>
               </View>
             </View>
 
@@ -141,7 +125,7 @@ export default function Dashboard() {
                 Em atendimento
               </Text>
               <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-3xl font-bold text-gray-800">{metrics.inProgress}</Text>
+                <Text className="text-3xl font-bold text-gray-800">5</Text>
               </View>
             </View>
 
@@ -151,7 +135,7 @@ export default function Dashboard() {
                 Escalonados
               </Text>
               <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-3xl font-bold text-gray-800">{metrics.escalated}</Text>
+                <Text className="text-3xl font-bold text-gray-800">3</Text>
               </View>
             </View>
 
@@ -161,7 +145,7 @@ export default function Dashboard() {
                 Resolvidos
               </Text>
               <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-3xl font-bold text-gray-800">{metrics.resolved}</Text>
+                <Text className="text-3xl font-bold text-gray-800">28</Text>
               </View>
             </View>
 

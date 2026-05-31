@@ -34,9 +34,12 @@ export default function TicketDetails() {
       const ticketData = res.data;
       setTicket(ticketData);
 
-      if (ticketData.clientId) {
+      const clientId = ticketData.client?.id || 
+                       (typeof ticketData.clientId === 'object' ? ticketData.clientId.id : ticketData.clientId);
+
+      if (clientId) {
         try {
-          const userRes = await api.get(`/user/${ticketData.clientId}`);
+          const userRes = await api.get(`/user/${clientId}`);
           setClientInfo({
             name: userRes.data.name,
             company: userRes.data.company?.name || 'Sem empresa',
@@ -44,7 +47,7 @@ export default function TicketDetails() {
           });
         } catch (userError) {
           console.log("Erro ao buscar dados do cliente", userError);
-          setClientInfo({ name: 'Usuário Desconhecido', company: '-' });
+          setClientInfo({ name: ticketData.client?.name || 'Usuário Desconhecido', company: '-' });
         }
       }
     } catch (e) {
@@ -267,8 +270,10 @@ export default function TicketDetails() {
     );
   }
 
-  const categoryId = ticket?.category;
-  const categoryName = categories.find(cat => (cat.id || cat._id) === categoryId)?.name || categoryId || 'Geral';
+  const categoryId = typeof ticket?.category === 'object' ? ticket.category.id : ticket?.category;
+  const categoryName = typeof ticket?.category === 'object' 
+    ? ticket.category.name 
+    : categories.find(cat => (cat.id || cat._id) === categoryId)?.name || categoryId || 'Geral';
 
   return (
     <SafeAreaView className="flex-1 bg-[#F8F9FA]" edges={['top', 'bottom']}>
@@ -279,7 +284,7 @@ export default function TicketDetails() {
         </TouchableOpacity>
         <View className="items-center">
           <Text className="text-slate-800 font-bold text-lg">Detalhes do Chamado</Text>
-          <Text className="text-orange-500 font-bold text-sm">#{ticket.id}</Text>
+          <Text className="text-orange-500 font-bold text-sm">#{ticket.id || ticket._id}</Text>
         </View>
         <TouchableOpacity onPress={() => setIsMenuVisible(true)} className="p-2">
           <Feather name="more-vertical" size={24} color="#1e293b" />
@@ -296,7 +301,7 @@ export default function TicketDetails() {
             <View className="flex-row items-center mb-1.5">
               <View className="w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
               <Text className="text-orange-500 font-bold text-xs uppercase tracking-wider">
-                STATUS: {ticket.status}
+                STATUS: {typeof ticket.status === 'object' ? ticket.status.name : ticket.status}
               </Text>
             </View>
             <Text className="text-xl font-bold text-slate-800 mb-1 leading-6">

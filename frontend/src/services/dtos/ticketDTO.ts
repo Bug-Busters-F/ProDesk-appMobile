@@ -14,7 +14,7 @@ export enum TicketPriority {
 
 export type TicketHistoryEntry = {
   event: string;
-  responsibleAgent: string | null;
+  responsibleAgent: string | { id: string, name: string } | null;
   status: TicketStatus;
   message: string;
   solution?: string | null;
@@ -31,10 +31,16 @@ export type ClientField = {
   name: string;
 };
 
+export type CategoryField = {
+  id: string;
+  name: string;
+};
+
 export interface TicketDTO {
   _id: string;
+  id?: string;
   title: string;
-  category: string;
+  category: string | CategoryField;
   priority: TicketPriority;
   description: string;
   clientId: string;

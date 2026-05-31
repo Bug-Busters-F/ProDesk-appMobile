@@ -18,10 +18,11 @@ export enum TicketPriority {
 
 export type TicketData = {
   _id: string;
+  id?: string;
   title: string;
-  category: string;
+  category: string | { id: string, name: string };
   priority: TicketPriority;
-  status: TicketStatus;
+  status: TicketStatus | { id: string, name: string };
   description: string;
   createdAt: string | Date;
   agentId?: string | null;
@@ -34,25 +35,25 @@ type Props = {
 };
 
 const STATUS_MAP = {
-  [TicketStatus.OPEN]: {
+  'OPEN': {
     label: 'ABERTO',
     color: 'text-amber-600',
     bg: 'bg-amber-50',
     icon: 'clock-outline', 
   },
-  [TicketStatus.IN_PROGRESS]: {
+  'IN_PROGRESS': {
     label: 'EM ATENDIMENTO',
     color: 'text-blue-600',
     bg: 'bg-blue-50',
     icon: 'message-text-outline',
   },
-  [TicketStatus.ESCALATED]: {
+  'ESCALATED': {
     label: 'ESCALADO',
     color: 'text-orange-600',
     bg: 'bg-orange-50',
     icon: 'alert-circle-outline',
   },
-  [TicketStatus.CLOSED]: {
+  'CLOSED': {
     label: 'FINALIZADO',
     color: 'text-slate-600',
     bg: 'bg-slate-100',
@@ -66,8 +67,10 @@ const formatDate = (dateInput: string | Date) => {
 };
 
 export function TicketCard({ ticket, onPress }: Props) {
-  const styleConfig = STATUS_MAP[ticket.status] || STATUS_MAP[TicketStatus.OPEN];
-  const shortId = `#${ticket._id.substring(ticket._id.length - 6).toUpperCase()}`;
+  const statusKey = typeof ticket.status === 'object' ? ticket.status.id : ticket.status;
+  const styleConfig = STATUS_MAP[statusKey as keyof typeof STATUS_MAP] || STATUS_MAP['OPEN'];
+  const ticketId = ticket._id || ticket.id || "";
+  const shortId = ticketId ? `#${ticketId.substring(ticketId.length - 6).toUpperCase()}` : "#N/A";
 
   return (
     <TouchableOpacity
@@ -79,7 +82,7 @@ export function TicketCard({ ticket, onPress }: Props) {
         <Text className="text-slate-400 font-medium text-xs font-mono">{shortId}</Text>
         <View className={`${styleConfig.bg} px-3 py-1 rounded-full`}>
           <Text className={`${styleConfig.color} font-bold text-[10px]`}>
-            {styleConfig.label}
+            {typeof ticket.status === 'object' ? ticket.status.name : styleConfig.label}
           </Text>
         </View>
       </View>
@@ -98,11 +101,11 @@ export function TicketCard({ ticket, onPress }: Props) {
         </View>
 
         <View className="flex-row items-center">
-          <MaterialCommunityIcons name={styleConfig.icon as any} size={14} color={ticket.status === TicketStatus.CLOSED ? "#94a3b8" : "#f97316"} />
+          <MaterialCommunityIcons name={styleConfig.icon as any} size={14} color={statusKey === 'CLOSED' ? "#94a3b8" : "#f97316"} />
           <Text
-            className={`${ticket.status === TicketStatus.CLOSED ? 'text-slate-400' : 'text-orange-500'} text-xs ml-1 font-medium`}
+            className={`${statusKey === 'CLOSED' ? 'text-slate-400' : 'text-orange-500'} text-xs ml-1 font-medium`}
           >
-            {ticket.status === TicketStatus.CLOSED ? 'Resolvido' 
+            {statusKey === 'CLOSED' ? 'Resolvido' 
               : !ticket.agentId ? 'Aguardando agente' 
               : 'Em análise'}
           </Text>

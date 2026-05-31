@@ -6,33 +6,6 @@ import { useRouter } from "expo-router";
 import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
 import { useNotifications } from "@/contexts/NotificationContext";
 
-const recentTickets = [
-  {
-    id: "9831",
-    title: "Erro no login do sistema",
-    subtitle: "João Silva • há 15 min",
-    status: "ALTA",
-    color: "#FB923C",
-    icon: "error-outline",
-  },
-  {
-    id: "9827",
-    title: "Solicitação de novo hardware",
-    subtitle: "Maria Souza • há 1h",
-    status: "MÉDIA",
-    color: "#60A5FA",
-    icon: "build",
-  },
-  {
-    id: "9821",
-    title: "Manutenção elétrica",
-    subtitle: "Pedro Costa • há 45 min",
-    status: "RESOLVIDO",
-    color: "#34D399",
-    icon: "bolt",
-  },
-];
-
 export default function Home() {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -153,26 +126,6 @@ export default function Home() {
             </TouchableOpacity>
           </View>
 
-          {/* Chamados por setor */}
-          <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
-            <View className="flex-row justify-between mb-4">
-              <Text className="font-bold text-gray-800">
-                Chamados por Setor
-              </Text>
-              <Text className="text-gray-400 text-sm">
-                últimos 30 dias
-              </Text>
-            </View>
-
-            <View className="flex-row justify-between">
-              {["S1", "S2", "S3", "Dev", "Outros"].map((item) => (
-                <Text key={item} className="text-gray-400 text-sm">
-                  {item}
-                </Text>
-              ))}
-            </View>
-          </View>
-
           {/* Status */}
           <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
             <Text className="font-bold text-gray-800 mb-4">
@@ -214,56 +167,6 @@ export default function Home() {
               </View>
 
             </View>
-          </View>
-
-          {/* Recentes */}
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-gray-800 font-bold text-lg">
-              Chamados Recentes
-            </Text>
-            <TouchableOpacity>
-              <Text className="text-orange-500 font-semibold">
-                Ver todos
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View>
-            {recentTickets.map((item) => (
-              <View key={item.id} className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between shadow-sm">
-
-                <View className="flex-row items-center flex-1">
-                  <View
-                    className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-                    style={{ backgroundColor: `${item.color}20` }}
-                  >
-                    <MaterialIcons
-                      name={item.icon as any}
-                      size={22}
-                      color={item.color}
-                    />
-                  </View>
-
-                  <View className="flex-1">
-                    <Text className="text-gray-800 font-semibold">
-                      {item.title}
-                    </Text>
-                    <Text className="text-gray-400 text-sm">
-                      {item.subtitle}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="bg-gray-100 px-3 py-1 rounded-full ml-2">
-                  <Text
-                    className="text-xs font-bold"
-                    style={{ color: item.color }}
-                  >
-                    {item.status}
-                  </Text>
-                </View>
-              </View>
-            ))}
           </View>
           <View className="h-10" />
         </View>
