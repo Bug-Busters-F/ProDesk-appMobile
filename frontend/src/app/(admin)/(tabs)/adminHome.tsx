@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
 import { useNotifications } from "@/contexts/NotificationContext";
+import api from "@/services/api";
 
 const recentTickets = [
   {
@@ -38,6 +39,54 @@ export default function Home() {
   const [showNotifications, setShowNotifications] = useState(false);
   const { unreadCount } = useNotifications();
 
+  const [metrics, setMetrics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  const fetchMetrics = async (categoryId: string) => {
+    setLoading(true);
+    try {
+      const url = categoryId ? `/tickets/metrics?categoryId=${categoryId}` : '/tickets/metrics';
+      const response = await api.get(url);
+      setMetrics(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar métricas:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get('/category');
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar categorias:", error);
+      }
+    };
+    fetchCategories();
+    fetchMetrics('');
+  }, []);
+
+  const handleSelectCategory = (catId: string) => {
+    setSelectedCategory(catId);
+    fetchMetrics(catId);
+  };
+
+  const formatAverageTime = (avgTime: any) => {
+    if (!avgTime || avgTime.count === 0) return "--";
+    if (avgTime.avgDays >= 1) return `${avgTime.avgDays.toFixed(1)}d`;
+    if (avgTime.avgHours >= 1) return `${avgTime.avgHours.toFixed(1)}h`;
+    return `${Math.round(avgTime.avgMinutes)}m`;
+  };
+
+  const total = metrics?.totalTickets || 0;
+  const openPercent = total ? Math.round(((metrics?.openTickets || 0) / total) * 100) : 0;
+  const closedPercent = total ? Math.round(((metrics?.closedTickets || 0) / total) * 100) : 0;
+  const escalatedPercent = total ? Math.round(((metrics?.escalatedTickets || 0) / total) * 100) : 0;
+
   return (
     <SafeAreaView className="flex-1 bg-stone-50">
       <TouchableWithoutFeedback onPress={() => setShowNotifications(false)}>
@@ -70,52 +119,136 @@ export default function Home() {
                 <NotificationDropdown onClose={() => setShowNotifications(false)} />
               )}
             </View>
+
+            {/* Filtro de Setor */}
+            {categories.length > 0 && (
+              <View className="mb-5 -mx-1">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <TouchableOpacity 
+                    onPress={() => handleSelectCategory('')}
+                    style={{
+                      backgroundColor: selectedCategory === '' ? '#f97316' : '#f9fafb',
+                      borderColor: selectedCategory === '' ? '#f97316' : '#e5e7eb',
+                    }}
+                    className="px-4 py-2 rounded-full mx-1 border"
+                  >
+                    <Text 
+                      style={{ color: selectedCategory === '' ? '#ffffff' : '#4b5563' }}
+                      className="font-semibold"
+                    >
+                      Geral da Empresa
+                    </Text>
+                  </TouchableOpacity>
+                  {categories.map((cat) => {
+                    const catId = cat.id || cat._id;
+                    const isSelected = selectedCategory === catId;
+                    return (
+                      <TouchableOpacity 
+                        key={catId}
+                        onPress={() => handleSelectCategory(catId)}
+                        style={{
+                          backgroundColor: isSelected ? '#f97316' : '#f9fafb',
+                          borderColor: isSelected ? '#f97316' : '#e5e7eb',
+                        }}
+                        className="px-4 py-2 rounded-full mx-1 border"
+                      >
+                        <Text 
+                          style={{ color: isSelected ? '#ffffff' : '#4b5563' }}
+                          className="font-semibold"
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
           
-          {/* Cards principais */}
-          <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-400 font-semibold">
-                TOTAL DE CHAMADOS
-              </Text>
-              <Text className="text-green-500 font-bold">+12.5%</Text>
+          {loading ? (
+            <View className="py-10">
+              <ActivityIndicator size="large" color="#F97316" />
             </View>
-            <Text className="text-3xl font-bold text-gray-800 mt-2">
-              1.284
-            </Text>
-            <View className="h-2 bg-gray-200 rounded-full mt-3">
-              <View className="w-[70%] h-2 bg-orange-400 rounded-full" />
-            </View>
-          </View>
+          ) : (
+            <>
+              {/* Cards principais */}
+              <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-400 font-semibold">
+                    TOTAL DE CHAMADOS
+                  </Text>
+                </View>
+                <Text className="text-3xl font-bold text-gray-800 mt-2">
+                  {metrics?.totalTickets || 0}
+                </Text>
+              </View>
 
-          <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-400 font-semibold">
-                RESOLVIDOS
-              </Text>
-              <Text className="text-green-500 font-bold">+5.2%</Text>
-            </View>
-            <Text className="text-3xl font-bold text-gray-800 mt-2">
-              942
-            </Text>
-            <View className="h-2 bg-gray-200 rounded-full mt-3">
-              <View className="w-[60%] h-2 bg-green-400 rounded-full" />
-            </View>
-          </View>
+              <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-400 font-semibold">
+                    RESOLVIDOS
+                  </Text>
+                </View>
+                <Text className="text-3xl font-bold text-gray-800 mt-2">
+                  {metrics?.closedTickets || 0}
+                </Text>
+              </View>
 
-          <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-400 font-semibold">
-                TEMPO MÉDIO
-              </Text>
-              <Text className="text-red-400 font-bold">-8.1%</Text>
-            </View>
-            <Text className="text-3xl font-bold text-gray-800 mt-2">
-              4.2h
-            </Text>
-            <View className="h-2 bg-gray-200 rounded-full mt-3">
-              <View className="w-[50%] h-2 bg-blue-400 rounded-full" />
-            </View>
-          </View>
+              <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-400 font-semibold">
+                    TEMPO MÉDIO
+                  </Text>
+                </View>
+                <Text className="text-3xl font-bold text-gray-800 mt-2">
+                  {formatAverageTime(metrics?.averageResolutionTime)}
+                </Text>
+              </View>
+
+              {/* Status */}
+              <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
+                <Text className="font-bold text-gray-800 mb-4">
+                  Status dos Chamados
+                </Text>
+
+                {/* Barra proporcional */}
+                <View className="h-3 w-full bg-gray-200 overflow-hidden flex-row mb-5 rounded-full">
+                  <View style={{ backgroundColor: '#fb923c', width: `${openPercent}%`, height: '100%' }} />
+                  <View style={{ backgroundColor: '#4ade80', width: `${closedPercent}%`, height: '100%' }} />
+                  <View style={{ backgroundColor: '#f87171', width: `${escalatedPercent}%`, height: '100%' }} />
+                </View>
+
+                {/* Legenda */}
+                <View className="space-y-2">
+                  
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="flex-row items-center">
+                      <View className="w-3 h-3 rounded-full bg-orange-400 mr-2" />
+                      <Text className="text-gray-600">Em Aberto</Text>
+                    </View>
+                    <Text className="font-semibold text-gray-800">{openPercent}%</Text>
+                  </View>
+
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="flex-row items-center">
+                      <View className="w-3 h-3 rounded-full bg-green-400 mr-2" />
+                      <Text className="text-gray-600">Resolvidos</Text>
+                    </View>
+                    <Text className="font-semibold text-gray-800">{closedPercent}%</Text>
+                  </View>
+
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <View className="w-3 h-3 rounded-full bg-red-400 mr-2" />
+                      <Text className="text-gray-600">Críticos</Text>
+                    </View>
+                    <Text className="font-semibold text-gray-800">{escalatedPercent}%</Text>
+                  </View>
+
+                </View>
+              </View>
+            </>
+          )}
 
           {/* Acesso Rápido */}
           <Text className="text-lg font-bold text-gray-800 mb-4">
@@ -153,118 +286,6 @@ export default function Home() {
             </TouchableOpacity>
           </View>
 
-          {/* Chamados por setor */}
-          <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
-            <View className="flex-row justify-between mb-4">
-              <Text className="font-bold text-gray-800">
-                Chamados por Setor
-              </Text>
-              <Text className="text-gray-400 text-sm">
-                últimos 30 dias
-              </Text>
-            </View>
-
-            <View className="flex-row justify-between">
-              {["S1", "S2", "S3", "Dev", "Outros"].map((item) => (
-                <Text key={item} className="text-gray-400 text-sm">
-                  {item}
-                </Text>
-              ))}
-            </View>
-          </View>
-
-          {/* Status */}
-          <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
-            <Text className="font-bold text-gray-800 mb-4">
-              Status dos Chamados
-            </Text>
-
-            {/* Barra proporcional */}
-            <View className="h-3 w-full bg-gray-200 overflow-hidden flex-row mb-5 rounded-full">
-              <View className="w-[70%] bg-orange-400" />
-              <View className="w-[25%] bg-green-400" />
-              <View className="w-[5%] bg-red-400" />
-            </View>
-
-            {/* Legenda */}
-            <View className="space-y-2">
-              
-              <View className="flex-row justify-between items-center mb-2">
-                <View className="flex-row items-center">
-                  <View className="w-3 h-3 rounded-full bg-orange-400 mr-2" />
-                  <Text className="text-gray-600">Em Aberto</Text>
-                </View>
-                <Text className="font-semibold text-gray-800">70%</Text>
-              </View>
-
-              <View className="flex-row justify-between items-center mb-2">
-                <View className="flex-row items-center">
-                  <View className="w-3 h-3 rounded-full bg-green-400 mr-2" />
-                  <Text className="text-gray-600">Resolvidos</Text>
-                </View>
-                <Text className="font-semibold text-gray-800">25%</Text>
-              </View>
-
-              <View className="flex-row justify-between items-center">
-                <View className="flex-row items-center">
-                  <View className="w-3 h-3 rounded-full bg-red-400 mr-2" />
-                  <Text className="text-gray-600">Críticos</Text>
-                </View>
-                <Text className="font-semibold text-gray-800">5%</Text>
-              </View>
-
-            </View>
-          </View>
-
-          {/* Recentes */}
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-gray-800 font-bold text-lg">
-              Chamados Recentes
-            </Text>
-            <TouchableOpacity>
-              <Text className="text-orange-500 font-semibold">
-                Ver todos
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View>
-            {recentTickets.map((item) => (
-              <View key={item.id} className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between shadow-sm">
-
-                <View className="flex-row items-center flex-1">
-                  <View
-                    className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-                    style={{ backgroundColor: `${item.color}20` }}
-                  >
-                    <MaterialIcons
-                      name={item.icon as any}
-                      size={22}
-                      color={item.color}
-                    />
-                  </View>
-
-                  <View className="flex-1">
-                    <Text className="text-gray-800 font-semibold">
-                      {item.title}
-                    </Text>
-                    <Text className="text-gray-400 text-sm">
-                      {item.subtitle}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="bg-gray-100 px-3 py-1 rounded-full ml-2">
-                  <Text
-                    className="text-xs font-bold"
-                    style={{ color: item.color }}
-                  >
-                    {item.status}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
           <View className="h-10" />
         </View>
       </ScrollView>
