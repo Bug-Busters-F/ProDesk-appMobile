@@ -48,11 +48,9 @@ export default function Dashboard() {
       ]);
       setTickets(ticketsData);
       
-      // Filter categories based on user's assigned categories (from develop)
-      const userCats = user?.categories || [];
+      const userCats = (user?.categories || []) as any[];
       const filtered = categoriesData.filter((cat: any) => {
-        const catId = cat.id || cat._id;
-        // Handle both object and string formats
+        const catId = cat.id || (cat as any)._id;
         return userCats.some(uc => (typeof uc === 'object' ? uc.id : uc) === catId);
       });
       setCategories(filtered);
@@ -173,7 +171,7 @@ export default function Dashboard() {
                     </Text>
                   </TouchableOpacity>
                   {categories.map((cat) => {
-                    const catId = cat.id || cat._id;
+                    const catId = cat.id || (cat as any)._id;
                     const isSelected = selectedCategory === catId;
                     return (
                       <TouchableOpacity 

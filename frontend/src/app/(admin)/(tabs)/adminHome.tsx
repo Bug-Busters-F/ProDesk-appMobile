@@ -57,6 +57,7 @@ export default function Home() {
 
   const total = metrics?.totalTickets || 0;
   const openPercent = total ? Math.round(((metrics?.openTickets || 0) / total) * 100) : 0;
+  const inProgressPercent = total ? Math.round(((metrics?.inProgressTickets || 0) / total) * 100) : 0;
   const closedPercent = total ? Math.round(((metrics?.closedTickets || 0) / total) * 100) : 0;
   const escalatedPercent = total ? Math.round(((metrics?.escalatedTickets || 0) / total) * 100) : 0;
 
@@ -184,17 +185,26 @@ export default function Home() {
                   Status dos Chamados
                 </Text>
 
-                {/* Barra proporcional */}
-                <View className="h-3 w-full bg-gray-200 overflow-hidden flex-row mb-5 rounded-full">
-                  <View style={{ backgroundColor: '#fb923c', width: `${openPercent}%`, height: '100%' }} />
-                  <View style={{ backgroundColor: '#4ade80', width: `${closedPercent}%`, height: '100%' }} />
-                  <View style={{ backgroundColor: '#f87171', width: `${escalatedPercent}%`, height: '100%' }} />
+                {/* Barra proporcional corrigida */}
+                <View className="h-3 w-full bg-gray-100 overflow-hidden flex-row mb-5 rounded-full">
+                  {openPercent > 0 && (
+                    <View style={{ backgroundColor: '#fb923c', width: `${openPercent}%`, height: '100%' }} />
+                  )}
+                  {inProgressPercent > 0 && (
+                    <View style={{ backgroundColor: '#60a5fa', width: `${inProgressPercent}%`, height: '100%' }} />
+                  )}
+                  {closedPercent > 0 && (
+                    <View style={{ backgroundColor: '#4ade80', width: `${closedPercent}%`, height: '100%' }} />
+                  )}
+                  {escalatedPercent > 0 && (
+                    <View style={{ backgroundColor: '#f87171', width: `${escalatedPercent}%`, height: '100%' }} />
+                  )}
                 </View>
 
                 {/* Legenda */}
-                <View className="space-y-2">
+                <View className="gap-y-3">
                   
-                  <View className="flex-row justify-between items-center mb-2">
+                  <View className="flex-row justify-between items-center">
                     <View className="flex-row items-center">
                       <View className="w-3 h-3 rounded-full bg-orange-400 mr-2" />
                       <Text className="text-gray-600">Em Aberto</Text>
@@ -202,7 +212,15 @@ export default function Home() {
                     <Text className="font-semibold text-gray-800">{openPercent}%</Text>
                   </View>
 
-                  <View className="flex-row justify-between items-center mb-2">
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <View className="w-3 h-3 rounded-full bg-blue-400 mr-2" />
+                      <Text className="text-gray-600">Em Atendimento</Text>
+                    </View>
+                    <Text className="font-semibold text-gray-800">{inProgressPercent}%</Text>
+                  </View>
+
+                  <View className="flex-row justify-between items-center">
                     <View className="flex-row items-center">
                       <View className="w-3 h-3 rounded-full bg-green-400 mr-2" />
                       <Text className="text-gray-600">Resolvidos</Text>
@@ -213,7 +231,7 @@ export default function Home() {
                   <View className="flex-row justify-between items-center">
                     <View className="flex-row items-center">
                       <View className="w-3 h-3 rounded-full bg-red-400 mr-2" />
-                      <Text className="text-gray-600">Críticos</Text>
+                      <Text className="text-gray-600">Escalonados</Text>
                     </View>
                     <Text className="font-semibold text-gray-800">{escalatedPercent}%</Text>
                   </View>
@@ -221,7 +239,8 @@ export default function Home() {
                 </View>
               </View>
             </>
-          )}
+          )
+}
 
           {/* Acesso Rápido */}
           <Text className="text-lg font-bold text-gray-800 mb-4">
