@@ -649,8 +649,6 @@ export default function TicketDetails() {
         </Pressable>
       </Modal>
 
-
-
       {/* MODAL DE RESOLVER (FECHAR) CHAMADO */}
       <Modal
         visible={showCloseModal}
