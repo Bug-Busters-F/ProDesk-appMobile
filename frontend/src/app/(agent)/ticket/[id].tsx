@@ -6,6 +6,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { io, Socket } from 'socket.io-client';
 import { MessageBubble, MessageType } from '@/components/chat/MessageBubble';
 import { api, useAuth } from '@/contexts/AuthContext';
+import * as DocumentPicker from 'expo-document-picker';
+import { uploadFile } from '@/services/api';
 
 export default function AgentTicketChatScreen() {
   const router = useRouter();
@@ -138,6 +140,33 @@ export default function AgentTicketChatScreen() {
     };
   }, [id, user]);
 
+  const handlePickAndSendFile = async () => {
+  try {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: '*/*',
+      multiple: true,
+    });
+
+    if (!result.canceled) {
+      for (const file of result.assets) {
+        const fileUrl = await uploadFile(file.uri, file.name);
+
+        const isImage = file.name.match(/\.(jpeg|jpg|gif|png)$/i);
+        const messageType = isImage ? 'IMAGE' : 'FILE';
+
+        socketRef.current?.emit('enviarMensagem', {
+          chatId: id,
+          content: isImage ? 'Imagem enviada' : 'Arquivo enviado',
+          attachmentUrl: fileUrl,
+          type: messageType,
+        });
+      }
+    }
+  } catch (error) {
+    console.log('ERRO COMPLETO:', error);
+  }
+};
+
   const handleSendMessage = () => {
     if (!inputText.trim()) return;
     socketRef.current?.emit('enviarMensagem', { chatId: id, content: inputText.trim() });
@@ -187,6 +216,16 @@ export default function AgentTicketChatScreen() {
           </View>
         ) : (
           <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
+            <TouchableOpacity
+              onPress={handlePickAndSendFile}
+              className="p-2"
+            >
+              <Feather
+                name="plus-circle"
+                size={24}
+                color="#94a3b8"
+              />
+            </TouchableOpacity>
             <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
               <TextInput
                 placeholder="Responder ao cliente..."
