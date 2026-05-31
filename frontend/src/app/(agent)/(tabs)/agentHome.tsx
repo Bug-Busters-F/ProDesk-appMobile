@@ -1,9 +1,12 @@
-import React, { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, FlatList, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
 import { useNotifications } from "@/contexts/NotificationContext";
+import { useAuth } from "@/contexts/AuthContext";
+import api from "@/services/api";
 
 const recentTickets = [
   {
@@ -33,8 +36,52 @@ const recentTickets = [
 ];
 
 export default function Dashboard() {
+  const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const { unreadCount } = useNotifications();
+  const { user } = useAuth();
+
+  const [metrics, setMetrics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  const fetchMetrics = async (categoryId: string) => {
+    setLoading(true);
+    try {
+      const url = categoryId ? `/tickets/metrics?categoryId=${categoryId}` : '/tickets/metrics';
+      const response = await api.get(url);
+      setMetrics(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar métricas:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get('/category');
+        // Filter categories based on user's assigned categories
+        const userCats = user?.categories || [];
+        const filtered = response.data.filter((cat: any) => {
+          const catId = cat.id || cat._id;
+          return userCats.includes(catId);
+        });
+        setCategories(filtered);
+      } catch (error) {
+        console.error("Erro ao buscar categorias:", error);
+      }
+    };
+    fetchCategories();
+    fetchMetrics('');
+  }, [user]);
+
+  const handleSelectCategory = (catId: string) => {
+    setSelectedCategory(catId);
+    fetchMetrics(catId);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#F3F4F6]">
@@ -47,10 +94,10 @@ export default function Dashboard() {
               <View className="flex-row items-center">
                 <View>
                   <Text className="text-xl font-bold text-gray-800">
-                    Olá, Atendente
+                    Olá, {user?.name || 'Atendente'}
                   </Text>
                   <Text className="text-orange-500 text-base font-medium mt-1">
-                    Setor: Suporte Técnico
+                    Setor de Atendimento
                   </Text>
                 </View>
               </View>
@@ -70,63 +117,116 @@ export default function Dashboard() {
               )}
             </View>
 
-          {/* Cards */}
-          <View className="flex-row flex-wrap justify-between">
-            
-            {/* Pendentes */}
-            <View className="w-[48%] bg-gray-50 rounded-2xl p-5 mb-4 border-l-4 border-orange-400">
-              <Text className="text-gray-400 text-sm font-semibold">
-                PENDENTES
-              </Text>
-              <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-3xl font-bold text-gray-800">12</Text>
+            {/* Filtro de Setor */}
+            {categories.length > 0 && (
+              <View className="mb-5 -mx-1">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <TouchableOpacity 
+                    onPress={() => handleSelectCategory('')}
+                    style={{
+                      backgroundColor: selectedCategory === '' ? '#f97316' : '#f9fafb',
+                      borderColor: selectedCategory === '' ? '#f97316' : '#e5e7eb',
+                    }}
+                    className="px-4 py-2 rounded-full mx-1 border"
+                  >
+                    <Text 
+                      style={{ color: selectedCategory === '' ? '#ffffff' : '#4b5563' }}
+                      className="font-semibold"
+                    >
+                      Meus Setores
+                    </Text>
+                  </TouchableOpacity>
+                  {categories.map((cat) => {
+                    const catId = cat.id || cat._id;
+                    const isSelected = selectedCategory === catId;
+                    return (
+                      <TouchableOpacity 
+                        key={catId}
+                        onPress={() => handleSelectCategory(catId)}
+                        style={{
+                          backgroundColor: isSelected ? '#f97316' : '#f9fafb',
+                          borderColor: isSelected ? '#f97316' : '#e5e7eb',
+                        }}
+                        className="px-4 py-2 rounded-full mx-1 border"
+                      >
+                        <Text 
+                          style={{ color: isSelected ? '#ffffff' : '#4b5563' }}
+                          className="font-semibold"
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Cards */}
+            {loading ? (
+              <View className="py-10 items-center justify-center">
+                <ActivityIndicator size="large" color="#F97316" />
+              </View>
+            ) : (
+              <View className="flex-row flex-wrap justify-between">
                 
-              </View>
-            </View>
+                {/* Pendentes */}
+                <View className="w-[48%] bg-gray-50 rounded-2xl p-5 mb-4 border-l-4 border-orange-400">
+                  <Text className="text-gray-400 text-sm font-semibold">
+                    PENDENTES
+                  </Text>
+                  <View className="flex-row items-center justify-between mt-3">
+                    <Text className="text-3xl font-bold text-gray-800">{metrics?.openTickets || 0}</Text>
+                    
+                  </View>
+                </View>
 
-            {/* Em atendimento */}
-            <View className="w-[48%] bg-gray-50 rounded-2xl p-5 mb-4 border-l-4 border-blue-400">
-              <Text className="text-gray-400 text-sm font-semibold">
-                EM ATENDIMENTO
-              </Text>
-              <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-3xl font-bold text-gray-800">5</Text>
-              </View>
-            </View>
+                {/* Em atendimento */}
+                <View className="w-[48%] bg-gray-50 rounded-2xl p-5 mb-4 border-l-4 border-blue-400">
+                  <Text className="text-gray-400 text-sm font-semibold">
+                    EM ATENDIMENTO
+                  </Text>
+                  <View className="flex-row items-center justify-between mt-3">
+                    <Text className="text-3xl font-bold text-gray-800">{metrics?.inProgressTickets || 0}</Text>
+                  </View>
+                </View>
 
-            {/* Escalonados */}
-            <View className="w-[48%] bg-gray-50 rounded-2xl p-5 border-l-4 border-red-400">
-              <Text className="text-gray-400 text-sm font-semibold">
-                ESCALONADOS
-              </Text>
-              <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-3xl font-bold text-gray-800">3</Text>
-                
-              </View>
-            </View>
+                {/* Escalonados */}
+                <View className="w-[48%] bg-gray-50 rounded-2xl p-5 border-l-4 border-red-400">
+                  <Text className="text-gray-400 text-sm font-semibold">
+                    ESCALONADOS
+                  </Text>
+                  <View className="flex-row items-center justify-between mt-3">
+                    <Text className="text-3xl font-bold text-gray-800">{metrics?.escalatedTickets || 0}</Text>
+                    
+                  </View>
+                </View>
 
-            {/* Resolvidos */}
-            <View className="w-[48%] bg-gray-50 rounded-2xl p-5 border-l-4 border-green-400">
-              <Text className="text-gray-400 text-sm font-semibold">
-                RESOLVIDOS
-              </Text>
-              <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-3xl font-bold text-gray-800">28</Text>
-                
-              </View>
-            </View>
+                {/* Resolvidos */}
+                <View className="w-[48%] bg-gray-50 rounded-2xl p-5 border-l-4 border-green-400">
+                  <Text className="text-gray-400 text-sm font-semibold">
+                    RESOLVIDOS
+                  </Text>
+                  <View className="flex-row items-center justify-between mt-3">
+                    <Text className="text-3xl font-bold text-gray-800">{metrics?.closedTickets || 0}</Text>
+                    
+                  </View>
+                </View>
 
+              </View>
+            )}
           </View>
-        </View>
 
         {/* Chamados */}
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-gray-800 font-bold text-lg">
             Chamados Recentes
           </Text>
-          <Text className="text-orange-500 font-semibold text-base">
-            Ver todos
-          </Text>
+          <TouchableOpacity onPress={() => router.push('/(agent)/(tabs)/tickets')}>
+            <Text className="text-orange-500 font-semibold text-base">
+              Ver todos
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <FlatList

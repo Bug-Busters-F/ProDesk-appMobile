@@ -267,8 +267,14 @@ export default function TicketDetails() {
     );
   }
 
-  const categoryId = ticket?.category;
-  const categoryName = categories.find(cat => (cat.id || cat._id) === categoryId)?.name || categoryId || 'Geral';
+  const rawCat = ticket?.category;
+  let categoryName = 'Geral';
+  
+  if (typeof rawCat === 'string') {
+    categoryName = categories.find(cat => (cat.id || cat._id) === rawCat)?.name || rawCat;
+  } else if (rawCat && typeof rawCat === 'object') {
+    categoryName = rawCat.name || 'Geral';
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-[#F8F9FA]" edges={['top', 'bottom']}>

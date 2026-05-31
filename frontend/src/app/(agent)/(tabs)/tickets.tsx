@@ -28,11 +28,18 @@ const fetchTickets = async () => {
         categoryDictionary[catId] = cat.name;
       });
       const formattedTickets = ticketsData.map((t: any) => {
-        const rawCategory = t.category || t.props?.category;
+        const catObj = t.category || t.props?.category;
+        
+        let categoryName = 'Sem Categoria';
+        if (typeof catObj === 'string') {
+          categoryName = categoryDictionary[catObj] || catObj;
+        } else if (catObj && typeof catObj === 'object') {
+          categoryName = catObj.name || 'Sem Categoria';
+        }
         
         return {
           ...t,
-          category: categoryDictionary[rawCategory] || rawCategory || 'Sem Categoria'
+          category: categoryName
         };
       });
 
