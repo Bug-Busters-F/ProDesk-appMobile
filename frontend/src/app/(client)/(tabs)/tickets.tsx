@@ -25,7 +25,11 @@ export default function Tickets() {
       const response = await api.get('/tickets');
       const data = response.data; 
 
-      const myTickets = data.filter((t: any) => t.clientId === user?.id);
+      const myTickets = data.filter((t: any) => {
+        // O backend está enviando o ID dentro do objeto 'client'
+        const ticketClientId = t.client?.id || t.clientId?.id || t.clientId;
+        return ticketClientId === user?.id;
+      });
 
       const formattedTickets: TicketData[] = myTickets.map((t: any) => ({
         _id: t.id || t._id,
@@ -35,7 +39,7 @@ export default function Tickets() {
         status: (t.status || t.props?.status) as TicketStatus,
         description: t.description || t.props?.description,
         createdAt: t.createdAt || t.props?.createdAt,
-        agentId: t.agentId || t.props?.agentId,
+        agentId: typeof t.agentId === 'object' ? t.agentId.id : (t.agentId || t.props?.agentId),
         closedAt: t.closedAt || t.props?.closedAt,
       }));
 
@@ -63,10 +67,11 @@ export default function Tickets() {
   };
 
   const filteredTickets = tickets.filter(ticket => {
+    const statusKey = typeof ticket.status === 'object' ? (ticket.status as any).id : ticket.status;
     if (activeFilter === 'Todos') return true;
-    if (activeFilter === 'Abertos') return ticket.status === 'OPEN';
-    if (activeFilter === 'Em Progresso') return ticket.status === 'IN_PROGRESS';
-    if (activeFilter === 'Resolvidos') return ticket.status === 'CLOSED';
+    if (activeFilter === 'Abertos') return statusKey === 'OPEN';
+    if (activeFilter === 'Em Progresso') return statusKey === 'IN_PROGRESS';
+    if (activeFilter === 'Resolvidos') return statusKey === 'CLOSED';
     return true;
   });
 
