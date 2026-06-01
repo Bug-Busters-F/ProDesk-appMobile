@@ -160,12 +160,14 @@ export default function TicketDetails() {
       Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
       return;
     }
+    
+    const categoryId =
+      typeof ticket?.category === 'object'
+        ? ticket.category.id
+        : ticket?.category;
 
     const currentCategory = categories.find(
-      (cat) =>
-        cat.id === ticket.category ||
-        cat._id === ticket.category ||
-        cat.name === ticket.category
+      (cat) => (cat.id || cat._id) === categoryId
     );
 
     setSelectedCategory(currentCategory || null);
