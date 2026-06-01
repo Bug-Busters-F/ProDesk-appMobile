@@ -12,6 +12,7 @@ export type User = {
     role: UserRole;
     token: string; 
     profileImage?: string | null;
+    categories?: string[];
 }
 
 export type AuthContextData = {
@@ -56,7 +57,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode}) => {
                 name: decoded.name || 'Usuário', 
                 email: decoded.email,
                 role: decoded.role.toLowerCase() as UserRole,
-                token: token 
+                token: token,
+                categories: decoded.categories || []
             }
 
             await storage.setItem('prodesk_token', token)

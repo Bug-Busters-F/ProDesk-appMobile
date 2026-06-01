@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { io, Socket } from 'socket.io-client';
-import { MessageBubble, MessageType } from '../../../components/chat/MessageBubble';
+import { MessageBubble, MessageType } from '@/components/chat/MessageBubble';
 import { useAuth } from '@/contexts/AuthContext';
 import * as DocumentPicker from 'expo-document-picker';
 import api, { uploadFile } from '@/services/api';
@@ -16,7 +16,8 @@ import api, { uploadFile } from '@/services/api';
 export default function TicketChatScreen() {
   const router = useRouter();
   
-  const { id: routeId, initialMessage, isNewTicket, attachmentUrl } = useLocalSearchParams();
+  const { id: routeId, initialMessage, isNewTicket, attachmentUrl, ticketId } = useLocalSearchParams();
+  const realTicketId = (isNewTicket === 'true' ? routeId : ticketId) as string;
   const { user } = useAuth();
   
   const [inputText, setInputText] = useState('');
@@ -24,27 +25,49 @@ export default function TicketChatScreen() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   
   const [realChatId, setRealChatId] = useState<string | null>(null);
+  const [isTicketClosed, setIsTicketClosed] = useState(false);
   
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
   const hasSentInitialMessage = useRef(false);
 
+  const namesCache = useRef<Record<string, string>>({});
+  
+  const checkTicketStatus = async (chatId: string) => {
+    try {
+      const chatRes = await api.get(`/chat/${chatId}`);
+      const ticketId = chatRes.data.ticketId;
+      if (ticketId) {
+        const ticketRes = await api.get(`/tickets/${ticketId}`);
+        if (ticketRes.data.status === 'CLOSED') {
+          setIsTicketClosed(true);
+        }
+      }
+    } catch (e) {
+      console.log('Erro ao buscar status do chamado', e);
+    }
+  };
+
   const handlePickAndSendFile = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-    
+    const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        multiple: true,
+    });
+
     if (!result.canceled && realChatId) {
-        const file = result.assets[0];
-        const fileUrl = await uploadFile(file.uri, file.name);
-        
-        const isImage = file.name.match(/\.(jpeg|jpg|gif|png)$/i);
-        const messageType = isImage ? 'IMAGE' : 'FILE';
-        
-        socketRef.current?.emit('enviarMensagem', { 
-            chatId: realChatId, 
-            content: isImage ? 'Imagem enviada' : 'Arquivo enviado',
-            attachmentUrl: fileUrl,
-            type: messageType 
-        });
+        for (const file of result.assets) {
+            const fileUrl = await uploadFile(file.uri, file.name);
+
+            const isImage = file.name.match(/\.(jpeg|jpg|gif|png)$/i);
+            const messageType = isImage ? 'IMAGE' : 'FILE';
+
+            socketRef.current?.emit('enviarMensagem', {
+                chatId: realChatId,
+                content: isImage ? 'Imagem enviada' : 'Arquivo enviado',
+                attachmentUrl: fileUrl,
+                type: messageType,
+            });
+        }
     }
   };
 
@@ -57,22 +80,29 @@ export default function TicketChatScreen() {
             const chatResponse = await api.post('/chat', {
                 ticketId: routeId,
                 clientId: user?.id,
-                agentId: '507f1f77bcf86cd799439033', 
-                groupId: '507f1f77bcf86cd799439034', 
             });
             
             const chatData = chatResponse.data;
             finalChatId = chatData.id || chatData._id;
         } else {
-           finalChatId = routeId as string;
+           try {
+             const chatResponse = await api.get(`/chat/ticket/${routeId}`);
+             const chatData = chatResponse.data;
+             finalChatId = chatData.id || chatData._id;
+           } catch (error) {
+             console.log('ID da rota não é um TicketID válido ou chat não encontrado, tentando como ChatID');
+             finalChatId = routeId as string;
+           }
         }
 
         if (finalChatId) {
            setRealChatId(finalChatId);
+           checkTicketStatus(finalChatId);
         }
       } catch (error: any) {
         console.log('ERRO API CHAT:', error?.response?.data || error.message);
-        Alert.alert('Erro', 'Não foi possível criar a sala de chat.');
+        setIsLoadingHistory(false); 
+        Alert.alert('Erro', 'Não foi possível carregar o chat deste chamado.');
       }
     };
 
@@ -83,7 +113,7 @@ export default function TicketChatScreen() {
 
   useEffect(() => {
     if (!user?.token || !realChatId) return;
-    const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://SEU_IPV4:3000';
+    const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://10.0.2.2:3000';
 
     socketRef.current = io(socketUrl, {
       transports: ['websocket'],
@@ -114,27 +144,71 @@ export default function TicketChatScreen() {
       }
     });
 
-    socket.on('historicoChat', (data: { chatId: string, mensagens: any[] }) => {
-      const history = data.mensagens.map((msg) => ({
-        id: msg._id || msg.id,
-        text: msg.content,
-        attachmentUrl: msg.attachmentUrl, 
-        type: msg.type, 
-        sender: msg.senderId === user.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
-        time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      } as MessageType)); 
+    socket.on('historicoChat', async (data: { chatId: string, mensagens: any[] }) => {
+      const uniqueIds = [...new Set(data.mensagens.map(m => m.senderId).filter(Boolean))];
+
+      await Promise.all(uniqueIds.map(async (uid: any) => {
+        if (!namesCache.current[uid]) {
+          try {
+            const res = await api.get(`/user/${uid}`);
+            namesCache.current[uid] = res.data.name.split(' ')[0];
+            namesCache.current[`role_${uid}`] = res.data.role;
+          } catch(e) {
+            namesCache.current[uid] = 'Usuário';
+            namesCache.current[`role_${uid}`] = 'client';
+          }
+        }
+      }));
+
+      const history = data.mensagens.map((msg) => {
+        const isMe = msg.senderId === user.id;
+        const senderName = msg.isSystemMessage ? 'Sistema' : (namesCache.current[msg.senderId] || 'Usuário');
+        const senderRole = namesCache.current[`role_${msg.senderId}`] || 'client'; 
+
+        return {
+          id: msg._id || msg.id,
+          text: msg.content,
+          attachmentUrl: msg.attachmentUrl, 
+          type: msg.type, 
+          sender: isMe ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
+          senderRole: senderRole as any, 
+          agentName: isMe ? undefined : senderName,
+          time: new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        } as MessageType;
+      });
       
       setMessages(history);
       setIsLoadingHistory(false);
     });
 
-    socket.on('novaMensagem', (msg: any) => {
+    socket.on('novaMensagem', async (msg: any) => {
+      const isMe = msg.senderId === user.id;
+      let senderName = 'Usuário';
+      let senderRole = 'client';
+
+      if (!isMe && !msg.isSystemMessage) {
+          if (!namesCache.current[msg.senderId]) {
+            try {
+              const res = await api.get(`/user/${msg.senderId}`);
+              namesCache.current[msg.senderId] = res.data.name.split(' ')[0];
+              namesCache.current[`role_${msg.senderId}`] = res.data.role;
+            } catch(e) {
+              namesCache.current[msg.senderId] = 'Usuário';
+              namesCache.current[`role_${msg.senderId}`] = 'client';
+            }
+          }
+          senderName = namesCache.current[msg.senderId] || 'Usuário';
+          senderRole = namesCache.current[`role_${msg.senderId}`] || 'client';
+      }
+
       setMessages((prev) => [...prev, {
         id: msg._id || msg.id,
         text: msg.content,
         attachmentUrl: msg.attachmentUrl, 
         type: msg.type,
-        sender: msg.senderId === user.id ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
+        sender: isMe ? 'USER' : (msg.isSystemMessage ? 'BOT' : 'AGENT'),
+        senderRole: senderRole as any, 
+        agentName: isMe ? undefined : senderName,
         time: new Date(msg.createdAt || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       } as MessageType]);
     });
@@ -157,16 +231,30 @@ export default function TicketChatScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         
-        <View className="flex-row items-center px-6 py-4 border-b border-slate-100 shadow-sm z-10 bg-white">
-          <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2 -ml-2">
-            <Ionicons name="arrow-back" size={24} color="#1e293b" />
-          </TouchableOpacity>
-          <View>
-            <Text className="text-lg font-bold text-slate-800">
-              Protocolo #{typeof routeId === 'string' ? routeId.slice(-6).toUpperCase() : 'NOVO'}
-            </Text>
-            <Text className="text-orange-500 font-bold text-xs">ONLINE AGORA</Text>
+        <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-100 shadow-sm z-10 bg-white">
+          <View className="flex-row items-center flex-1 mr-4">
+            <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2 -ml-2">
+              <Ionicons name="arrow-back" size={24} color="#1e293b" />
+            </TouchableOpacity>
+            <View className="flex-1">
+              <Text className="text-lg font-bold text-slate-800" numberOfLines={1}>
+                Protocolo #{typeof routeId === 'string' ? routeId.slice(-6).toUpperCase() : 'NOVO'}
+              </Text>
+              <Text className="text-orange-500 font-bold text-xs">ONLINE AGORA</Text>
+            </View>
           </View>
+
+          {isNewTicket !== 'true' && realChatId && (
+            <TouchableOpacity 
+              onPress={() => router.push({
+                pathname: '/(client)/ticket/history/[id]',
+                params: { id: realTicketId }
+              })}
+              className="p-2 bg-slate-50 border border-slate-200 rounded-full"
+            >
+              <Feather name="clock" size={20} color="#64748b" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {isLoadingHistory ? (
@@ -196,40 +284,51 @@ export default function TicketChatScreen() {
           />
         )}
 
-        <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
-          <TouchableOpacity onPress={handlePickAndSendFile} className="p-2">
-              <Feather name="plus-circle" size={24} color="#94a3b8" />
-          </TouchableOpacity>
-          
-          <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
-            <TextInput
-              placeholder="Digite sua mensagem..."
-              className="flex-1 text-slate-800 h-full"
-              value={inputText}
-              onChangeText={setInputText}
-              onSubmitEditing={handleSendMessage}
-            />
-            <TouchableOpacity disabled={!inputText.trim()}>
-              <Feather name="smile" size={20} color={inputText.trim() ? "#f97316" : "#94a3b8"} />
+        {isTicketClosed ? (
+          <View className="px-6 py-4 border-t border-slate-100 bg-slate-50 items-center justify-center">
+            <View className="bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-100 flex-row items-center">
+              <Feather name="check-circle" size={16} color="#10b981" />
+              <Text className="text-emerald-700 font-bold text-xs ml-2 text-center">
+                Este chamado foi resolvido. O chat está fechado para novas mensagens.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
+            <TouchableOpacity onPress={handlePickAndSendFile} className="p-2">
+                <Feather name="plus-circle" size={24} color="#94a3b8" />
+            </TouchableOpacity>
+            
+            <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
+              <TextInput
+                placeholder="Digite sua mensagem..."
+                className="flex-1 text-slate-800 h-full"
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={handleSendMessage}
+              />
+              <TouchableOpacity disabled={!inputText.trim()}>
+                <Feather name="smile" size={20} color={inputText.trim() ? "#f97316" : "#94a3b8"} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              onPress={handleSendMessage}
+              disabled={!inputText.trim()}
+              className="w-12 h-12 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: inputText.trim() ? '#f97316' : '#e2e8f0',
+                elevation: inputText.trim() ? 4 : 0,
+                shadowColor: '#fdba74',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: inputText.trim() ? 0.4 : 0,
+                shadowRadius: 4,
+              }}
+            >
+              <Ionicons name="send" size={18} color="white" style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity 
-            onPress={handleSendMessage}
-            disabled={!inputText.trim()}
-            className="w-12 h-12 rounded-full items-center justify-center"
-            style={{
-              backgroundColor: inputText.trim() ? '#f97316' : '#e2e8f0',
-              elevation: inputText.trim() ? 4 : 0,
-              shadowColor: '#fdba74',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: inputText.trim() ? 0.4 : 0,
-              shadowRadius: 4,
-            }}
-          >
-            <Ionicons name="send" size={18} color="white" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-        </View>
+        )}
 
       </KeyboardAvoidingView>
     </SafeAreaView>

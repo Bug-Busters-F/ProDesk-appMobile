@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter, useFocusEffect } from 'expo-router';
 import { AgentTicketCard, AgentTicketStatus } from '@/components/tickets/AgentTicketCard';
 import api from '@/services/api';
 
@@ -29,10 +29,17 @@ const fetchTickets = async () => {
       });
       const formattedTickets = ticketsData.map((t: any) => {
         const rawCategory = t.category || t.props?.category;
+        let categoryName = 'Sem Categoria';
+
+        if (typeof rawCategory === 'object' && rawCategory !== null) {
+          categoryName = rawCategory.name || 'Sem Categoria';
+        } else if (rawCategory) {
+          categoryName = categoryDictionary[rawCategory] || rawCategory;
+        }
         
         return {
           ...t,
-          category: categoryDictionary[rawCategory] || rawCategory || 'Sem Categoria'
+          categoryName
         };
       });
 
@@ -51,27 +58,35 @@ const fetchTickets = async () => {
       setRefreshing(false);
     }
   };
-  useEffect(() => {
-    fetchTickets();
-  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTickets();
+    }, [])
+  );
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchTickets();
   };
 
-  const mapStatusToUI = (backendStatus: string): AgentTicketStatus => {
-    switch(backendStatus) {
+  const mapStatusToUI = (backendStatus: any): AgentTicketStatus => {
+    const statusKey = typeof backendStatus === 'object' ? backendStatus.id : backendStatus;
+    switch(statusKey) {
       case 'OPEN': return 'PENDENTE';
       case 'IN_PROGRESS': return 'EM ATENDIMENTO';
       case 'ESCALATED': return 'ESCALONADO';
+      case 'CLOSED': return 'RESOLVIDO';
       default: return 'PENDENTE';
     }
   };
 
   const filteredTickets = tickets.filter(ticket => {
+    const statusKey = typeof ticket.status === 'object' ? ticket.status.id : ticket.status;
     if (activeFilter === 'Todos') return true;
-    if (activeFilter === 'Pendentes') return ticket.status === 'OPEN';
-    if (activeFilter === 'Em atendimento') return ticket.status === 'IN_PROGRESS';
+    if (activeFilter === 'Pendentes') return statusKey === 'OPEN';
+    if (activeFilter === 'Em atendimento') return statusKey === 'IN_PROGRESS';
+    if (activeFilter === 'Resolvidos') return statusKey === 'CLOSED';
     return true;
   });
 
@@ -96,7 +111,7 @@ const fetchTickets = async () => {
         }
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 h-10">
-          {['Todos', 'Pendentes', 'Em atendimento'].map((filter) => {
+          {['Todos', 'Pendentes', 'Em atendimento', 'Resolvidos'].map((filter) => {
             const isActive = activeFilter === filter;
             return (
               <TouchableOpacity
@@ -125,6 +140,7 @@ const fetchTickets = async () => {
             const description = t.description || t.props?.description;
             const status = t.status || t.props?.status;
             const createdAt = t.createdAt || t.props?.createdAt;
+            const escalationLevel = t.escalationLevel || t.props?.escalationLevel || 1;
 
             return (
               <AgentTicketCard 
@@ -133,7 +149,8 @@ const fetchTickets = async () => {
                   id: ticketId,
                   title: title,
                   clientName: 'Cliente', 
-                  category: category,
+                  category: t.categoryName,
+                  escalationLevel: escalationLevel,
                   timeAgo: new Date(createdAt).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                   description: description,
                   status: mapStatusToUI(status)

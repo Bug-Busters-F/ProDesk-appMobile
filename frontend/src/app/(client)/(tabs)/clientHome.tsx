@@ -1,99 +1,121 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, TouchableWithoutFeedback, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 export default function Home() {
   const router = useRouter();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount } = useNotifications();
 
   return (
     <SafeAreaView className="flex-1 bg-stone-50">
-      <View className="flex-1 px-5 pt-6">
-        
-        {/* Header */}
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800">
-            Olá, Cliente
-          </Text>
-          <Text className="text-gray-400 mt-1">
-            Como podemos ajudar hoje?
-          </Text>
-        </View>
-
-        {/* Card 1 */}
-        <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+      <TouchableWithoutFeedback onPress={() => setShowNotifications(false)}>
+        <View className="flex-1 px-5 pt-6">
           
-          <View className="items-center">
-            <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mb-4">
-              <MaterialIcons name="confirmation-number" size={26} color="#F97316" />
+          {/* Header */}
+          <View className="mb-6 pb-3 flex flex-row justify-between relative z-50">
+            <View>
+              <Text className="text-2xl font-bold text-gray-800">
+                Central de Ajuda
+              </Text>
+              <Text className="text-gray-400 mt-1">
+                Como podemos auxiliar você hoje?
+              </Text>
+            </View>
+            <TouchableOpacity 
+              onPress={() => setShowNotifications(!showNotifications)}
+              className="bg-gray-100 p-3 rounded-xl relative"
+            >
+              <Feather name="bell" size={22} color="#6B7280" />
+              {unreadCount > 0 && (
+                <View className="absolute top-2.5 right-2.5 bg-orange-500 rounded-full h-2.5 w-2.5 border-2 border-gray-100" />
+              )}
+            </TouchableOpacity>
+
+            {showNotifications && (
+              <NotificationDropdown onClose={() => setShowNotifications(false)} />
+            )}
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Card 1 */}
+            <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+              
+              <View className="items-center">
+                <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mb-4">
+                  <MaterialIcons name="confirmation-number" size={26} color="#F97316" />
+                </View>
+
+                <Text className="text-gray-800 font-bold text-base mb-1">
+                  Abrir Novo Chamado
+                </Text>
+
+                <Text className="text-gray-400 text-center text-sm mb-5">
+                  Inicie um novo atendimento com nossa equipe técnica ou de suporte.
+                </Text>
+
+                <TouchableOpacity onPress={() => router.push('/(client)/newTicket')} className="w-full bg-orange-500 py-3 rounded-xl items-center">
+                  <Text className="text-white font-semibold">
+                    + Novo Ticket
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <Text className="text-gray-800 font-bold text-base mb-1">
-              Abrir Novo Chamado
-            </Text>
+            {/* Card 2 */}
+            <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+              
+              <View className="items-center">
+                <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mb-4">
+                  <MaterialIcons name="list-alt" size={26} color="#F97316" />
+                </View>
 
-            <Text className="text-gray-400 text-center text-sm mb-5">
-              Inicie um novo atendimento com nossa equipe técnica ou de suporte.
-            </Text>
+                <Text className="text-gray-800 font-bold text-base mb-1">
+                  Meus Chamados
+                </Text>
 
-            <TouchableOpacity className="w-full bg-orange-500 py-3 rounded-xl items-center">
-              <Text className="text-white font-semibold">
-                + Novo Ticket
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+                <Text className="text-gray-400 text-center text-sm mb-5">
+                  Acompanhe o status e histórico de todas as suas solicitações.
+                </Text>
 
-        {/* Card 2 */}
-        <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
-          
-          <View className="items-center">
-            <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mb-4">
-              <MaterialIcons name="list-alt" size={26} color="#F97316" />
+                <TouchableOpacity onPress={() => router.push('/(client)/(tabs)/tickets')} className="w-full bg-orange-100 py-3 rounded-xl items-center">
+                  <Text className="text-orange-500 font-semibold">
+                    Ver Histórico
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <Text className="text-gray-800 font-bold text-base mb-1">
-              Meus Chamados
-            </Text>
+            {/* Card 3 */}
+            <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              
+              <View className="items-center">
+                <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mb-4">
+                  <Feather name="help-circle" size={26} color="#F97316" />
+                </View>
 
-            <Text className="text-gray-400 text-center text-sm mb-5">
-              Acompanhe o status e histórico de todas as suas solicitações.
-            </Text>
+                <Text className="text-gray-800 font-bold text-base mb-1">
+                  FAQ - Perguntas
+                </Text>
 
-            <TouchableOpacity className="w-full bg-orange-100 py-3 rounded-xl items-center">
-              <Text className="text-orange-500 font-semibold">
-                Ver Histórico
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+                <Text className="text-gray-400 text-center text-sm mb-5">
+                  Encontre respostas rápidas para as dúvidas mais comuns de outros usuários.
+                </Text>
 
-        {/* Card 3 */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          
-          <View className="items-center">
-            <View className="w-16 h-16 rounded-full bg-orange-100 items-center justify-center mb-4">
-              <Feather name="help-circle" size={26} color="#F97316" />
+                <TouchableOpacity onPress={() => router.push('/(client)/faq')} className="w-full bg-orange-100 py-3 rounded-xl items-center">
+                  <Text className="text-orange-500 font-semibold">
+                    Explorar FAQ
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-
-            <Text className="text-gray-800 font-bold text-base mb-1">
-              FAQ - Perguntas
-            </Text>
-
-            <Text className="text-gray-400 text-center text-sm mb-5">
-              Encontre respostas rápidas para as dúvidas mais comuns de outros usuários.
-            </Text>
-
-            <TouchableOpacity onPress={() => router.push('/(client)/faq')} className="w-full bg-orange-100 py-3 rounded-xl items-center">
-              <Text className="text-orange-500 font-semibold">
-                Explorar FAQ
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
-
-      </View>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

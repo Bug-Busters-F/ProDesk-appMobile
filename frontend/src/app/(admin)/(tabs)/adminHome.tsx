@@ -1,105 +1,246 @@
-import React from "react";
-import { View, Text, FlatList, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, TouchableOpacity, TouchableWithoutFeedback, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-
-const recentTickets = [
-  {
-    id: "9831",
-    title: "Erro no login do sistema",
-    subtitle: "João Silva • há 15 min",
-    status: "ALTA",
-    color: "#FB923C",
-    icon: "error-outline",
-  },
-  {
-    id: "9827",
-    title: "Solicitação de novo hardware",
-    subtitle: "Maria Souza • há 1h",
-    status: "MÉDIA",
-    color: "#60A5FA",
-    icon: "build",
-  },
-  {
-    id: "9821",
-    title: "Manutenção elétrica",
-    subtitle: "Pedro Costa • há 45 min",
-    status: "RESOLVIDO",
-    color: "#34D399",
-    icon: "bolt",
-  },
-];
+import { NotificationDropdown } from "../../../components/notifications/NotificationDropdown";
+import { useNotifications } from "@/contexts/NotificationContext";
+import api from "@/services/api";
 
 export default function Home() {
   const router = useRouter();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount } = useNotifications();
+
+  const [metrics, setMetrics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  const fetchMetrics = async (categoryId: string) => {
+    setLoading(true);
+    try {
+      const url = categoryId ? `/tickets/metrics?categoryId=${categoryId}` : '/tickets/metrics';
+      const response = await api.get(url);
+      setMetrics(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar métricas:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get('/category');
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar categorias:", error);
+      }
+    };
+    fetchCategories();
+    fetchMetrics('');
+  }, []);
+
+  const handleSelectCategory = (catId: string) => {
+    setSelectedCategory(catId);
+    fetchMetrics(catId);
+  };
+
+  const formatAverageTime = (avgTime: any) => {
+    if (!avgTime || avgTime.count === 0) return "--";
+    if (avgTime.avgDays >= 1) return `${avgTime.avgDays.toFixed(1)}d`;
+    if (avgTime.avgHours >= 1) return `${avgTime.avgHours.toFixed(1)}h`;
+    return `${Math.round(avgTime.avgMinutes)}m`;
+  };
+
+  const total = metrics?.totalTickets || 0;
+  const openPercent = total ? Math.round(((metrics?.openTickets || 0) / total) * 100) : 0;
+  const inProgressPercent = total ? Math.round(((metrics?.inProgressTickets || 0) / total) * 100) : 0;
+  const closedPercent = total ? Math.round(((metrics?.closedTickets || 0) / total) * 100) : 0;
+  const escalatedPercent = total ? Math.round(((metrics?.escalatedTickets || 0) / total) * 100) : 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F3F4F6]">
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaView className="flex-1 bg-stone-50">
+      <TouchableWithoutFeedback onPress={() => setShowNotifications(false)}>
+        <ScrollView showsVerticalScrollIndicator={false}>
 
-        <View className="flex-1 px-6 pt-5">
+          <View className="flex-1 px-6 pt-5">
 
-          {/* Header */}
-          <View className="flex-row justify-between items-center mb-6">
-            <Text className="text-2xl font-bold text-gray-800">
-              Painel Geral
-            </Text>
-          </View>
+            {/* Header */}
+            <View className="flex-row justify-between pb-3 items-center mb-6 border-b border-b-gray-300 relative z-50">
+              <View>
+                <Text className="text-2xl font-bold text-gray-800">
+                  Visão Geral
+                </Text>
+                <Text className="text-gray-400 mt-1">
+                  Métricas e solicitações recentes. 
+                </Text>
+              </View>
 
-          {/* Visão Geral */}
-          <Text className="text-lg font-bold text-gray-800">
-            Visão Geral
-          </Text>
-          <Text className="text-gray-400 mb-4">
-            Bem-vindo de volta! Aqui está o resumo de hoje.
-          </Text>
+              <TouchableOpacity 
+                onPress={() => setShowNotifications(!showNotifications)}
+                className="bg-gray-200/50 p-3 rounded-xl relative"
+              >
+                <Feather name="bell" size={22} color="#6B7280" />
+                {unreadCount > 0 && (
+                  <View className="absolute top-2.5 right-2.5 bg-orange-500 rounded-full h-2.5 w-2.5 border-2 border-stone-50" />
+                )}
+              </TouchableOpacity>
 
-          {/* Cards principais */}
-          <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-400 font-semibold">
-                TOTAL DE CHAMADOS
-              </Text>
-              <Text className="text-green-500 font-bold">+12.5%</Text>
+              {showNotifications && (
+                <NotificationDropdown onClose={() => setShowNotifications(false)} />
+              )}
             </View>
-            <Text className="text-3xl font-bold text-gray-800 mt-2">
-              1.284
-            </Text>
-            <View className="h-2 bg-gray-200 rounded-full mt-3">
-              <View className="w-[70%] h-2 bg-orange-400 rounded-full" />
-            </View>
-          </View>
 
-          <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-400 font-semibold">
-                RESOLVIDOS
-              </Text>
-              <Text className="text-green-500 font-bold">+5.2%</Text>
+            {/* Filtro de Setor */}
+            {categories.length > 0 && (
+              <View className="mb-5 -mx-1">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <TouchableOpacity 
+                    onPress={() => handleSelectCategory('')}
+                    style={{
+                      backgroundColor: selectedCategory === '' ? '#f97316' : '#f9fafb',
+                      borderColor: selectedCategory === '' ? '#f97316' : '#e5e7eb',
+                    }}
+                    className="px-4 py-2 rounded-full mx-1 border"
+                  >
+                    <Text 
+                      style={{ color: selectedCategory === '' ? '#ffffff' : '#4b5563' }}
+                      className="font-semibold"
+                    >
+                      Geral da Empresa
+                    </Text>
+                  </TouchableOpacity>
+                  {categories.map((cat) => {
+                    const catId = cat.id || cat._id;
+                    const isSelected = selectedCategory === catId;
+                    return (
+                      <TouchableOpacity 
+                        key={catId}
+                        onPress={() => handleSelectCategory(catId)}
+                        style={{
+                          backgroundColor: isSelected ? '#f97316' : '#f9fafb',
+                          borderColor: isSelected ? '#f97316' : '#e5e7eb',
+                        }}
+                        className="px-4 py-2 rounded-full mx-1 border"
+                      >
+                        <Text 
+                          style={{ color: isSelected ? '#ffffff' : '#4b5563' }}
+                          className="font-semibold"
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+          
+          {loading ? (
+            <View className="py-10">
+              <ActivityIndicator size="large" color="#F97316" />
             </View>
-            <Text className="text-3xl font-bold text-gray-800 mt-2">
-              942
-            </Text>
-            <View className="h-2 bg-gray-200 rounded-full mt-3">
-              <View className="w-[60%] h-2 bg-green-400 rounded-full" />
-            </View>
-          </View>
+          ) : (
+            <>
+              {/* Cards principais */}
+              <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-400 font-semibold">
+                    TOTAL DE CHAMADOS
+                  </Text>
+                </View>
+                <Text className="text-3xl font-bold text-gray-800 mt-2">
+                  {metrics?.totalTickets || 0}
+                </Text>
+              </View>
 
-          <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-400 font-semibold">
-                TEMPO MÉDIO
-              </Text>
-              <Text className="text-red-400 font-bold">-8.1%</Text>
-            </View>
-            <Text className="text-3xl font-bold text-gray-800 mt-2">
-              4.2h
-            </Text>
-            <View className="h-2 bg-gray-200 rounded-full mt-3">
-              <View className="w-[50%] h-2 bg-blue-400 rounded-full" />
-            </View>
-          </View>
+              <View className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-400 font-semibold">
+                    RESOLVIDOS
+                  </Text>
+                </View>
+                <Text className="text-3xl font-bold text-gray-800 mt-2">
+                  {metrics?.closedTickets || 0}
+                </Text>
+              </View>
+
+              <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-400 font-semibold">
+                    TEMPO MÉDIO
+                  </Text>
+                </View>
+                <Text className="text-3xl font-bold text-gray-800 mt-2">
+                  {formatAverageTime(metrics?.averageResolutionTime)}
+                </Text>
+              </View>
+
+              {/* Status */}
+              <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
+                <Text className="font-bold text-gray-800 mb-4">
+                  Status dos Chamados
+                </Text>
+
+                {/* Barra proporcional corrigida */}
+                <View className="h-3 w-full bg-gray-100 overflow-hidden flex-row mb-5 rounded-full">
+                  {openPercent > 0 && (
+                    <View style={{ backgroundColor: '#fb923c', width: `${openPercent}%`, height: '100%' }} />
+                  )}
+                  {inProgressPercent > 0 && (
+                    <View style={{ backgroundColor: '#60a5fa', width: `${inProgressPercent}%`, height: '100%' }} />
+                  )}
+                  {closedPercent > 0 && (
+                    <View style={{ backgroundColor: '#4ade80', width: `${closedPercent}%`, height: '100%' }} />
+                  )}
+                  {escalatedPercent > 0 && (
+                    <View style={{ backgroundColor: '#f87171', width: `${escalatedPercent}%`, height: '100%' }} />
+                  )}
+                </View>
+
+                {/* Legenda */}
+                <View className="gap-y-3">
+                  
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <View className="w-3 h-3 rounded-full bg-orange-400 mr-2" />
+                      <Text className="text-gray-600">Em Aberto</Text>
+                    </View>
+                    <Text className="font-semibold text-gray-800">{openPercent}%</Text>
+                  </View>
+
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <View className="w-3 h-3 rounded-full bg-blue-400 mr-2" />
+                      <Text className="text-gray-600">Em Atendimento</Text>
+                    </View>
+                    <Text className="font-semibold text-gray-800">{inProgressPercent}%</Text>
+                  </View>
+
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <View className="w-3 h-3 rounded-full bg-green-400 mr-2" />
+                      <Text className="text-gray-600">Resolvidos</Text>
+                    </View>
+                    <Text className="font-semibold text-gray-800">{closedPercent}%</Text>
+                  </View>
+
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <View className="w-3 h-3 rounded-full bg-red-400 mr-2" />
+                      <Text className="text-gray-600">Escalonados</Text>
+                    </View>
+                    <Text className="font-semibold text-gray-800">{escalatedPercent}%</Text>
+                  </View>
+
+                </View>
+              </View>
+            </>
+          )
+}
 
           {/* Acesso Rápido */}
           <Text className="text-lg font-bold text-gray-800 mb-4">
@@ -137,125 +278,10 @@ export default function Home() {
             </TouchableOpacity>
           </View>
 
-          {/* Chamados por setor */}
-          <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
-            <View className="flex-row justify-between mb-4">
-              <Text className="font-bold text-gray-800">
-                Chamados por Setor
-              </Text>
-              <Text className="text-gray-400 text-sm">
-                últimos 30 dias
-              </Text>
-            </View>
-
-            <View className="flex-row justify-between">
-              {["S1", "S2", "S3", "Dev", "Outros"].map((item) => (
-                <Text key={item} className="text-gray-400 text-sm">
-                  {item}
-                </Text>
-              ))}
-            </View>
-          </View>
-
-          {/* Status */}
-          <View className="bg-white rounded-2xl p-5 mb-6 shadow-sm">
-            <Text className="font-bold text-gray-800 mb-4">
-              Status dos Chamados
-            </Text>
-
-            {/* Barra proporcional */}
-            <View className="h-3 w-full bg-gray-200 overflow-hidden flex-row mb-5 rounded-full">
-              <View className="w-[70%] bg-orange-400" />
-              <View className="w-[25%] bg-green-400" />
-              <View className="w-[5%] bg-red-400" />
-            </View>
-
-            {/* Legenda */}
-            <View className="space-y-2">
-              
-              <View className="flex-row justify-between items-center mb-2">
-                <View className="flex-row items-center">
-                  <View className="w-3 h-3 rounded-full bg-orange-400 mr-2" />
-                  <Text className="text-gray-600">Em Aberto</Text>
-                </View>
-                <Text className="font-semibold text-gray-800">70%</Text>
-              </View>
-
-              <View className="flex-row justify-between items-center mb-2">
-                <View className="flex-row items-center">
-                  <View className="w-3 h-3 rounded-full bg-green-400 mr-2" />
-                  <Text className="text-gray-600">Resolvidos</Text>
-                </View>
-                <Text className="font-semibold text-gray-800">25%</Text>
-              </View>
-
-              <View className="flex-row justify-between items-center">
-                <View className="flex-row items-center">
-                  <View className="w-3 h-3 rounded-full bg-red-400 mr-2" />
-                  <Text className="text-gray-600">Críticos</Text>
-                </View>
-                <Text className="font-semibold text-gray-800">5%</Text>
-              </View>
-
-            </View>
-          </View>
-
-          {/* Recentes */}
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-gray-800 font-bold text-lg">
-              Chamados Recentes
-            </Text>
-            <TouchableOpacity>
-              <Text className="text-orange-500 font-semibold">
-                Ver todos
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <FlatList
-            data={recentTickets}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between shadow-sm">
-
-                <View className="flex-row items-center flex-1">
-                  <View
-                    className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-                    style={{ backgroundColor: `${item.color}20` }}
-                  >
-                    <MaterialIcons
-                      name={item.icon as any}
-                      size={22}
-                      color={item.color}
-                    />
-                  </View>
-
-                  <View className="flex-1">
-                    <Text className="text-gray-800 font-semibold">
-                      {item.title}
-                    </Text>
-                    <Text className="text-gray-400 text-sm">
-                      {item.subtitle}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="bg-gray-100 px-3 py-1 rounded-full ml-2">
-                  <Text
-                    className="text-xs font-bold"
-                    style={{ color: item.color }}
-                  >
-                    {item.status}
-                  </Text>
-                </View>
-              </View>
-            )}
-          />
           <View className="h-10" />
         </View>
       </ScrollView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

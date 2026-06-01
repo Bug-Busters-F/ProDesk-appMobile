@@ -2,6 +2,7 @@ import '../../global.css';
 import { useRouter, useSegments, usePathname, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
+import { NotificationProvider } from '../contexts/NotificationContext';
 
 function InitialLayout () {
   const { user, isLoading } = useAuth()
@@ -37,7 +38,9 @@ function InitialLayout () {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <InitialLayout />
+      <NotificationProvider>
+        <InitialLayout />
+      </NotificationProvider>
     </AuthProvider>
   )
 }
