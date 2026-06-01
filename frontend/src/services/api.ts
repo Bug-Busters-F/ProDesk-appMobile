@@ -6,7 +6,7 @@ import { TicketDTO } from './dtos/ticketDTO'
 import { CategoryDTO } from './dtos/categoryDTO'
 
 const api = axios.create({
-    baseURL: Platform.OS === 'android' ? 'http://10.0.2.2:3000/ProDeskApi' : 'http://localhost:3000/ProDeskApi'
+    baseURL: Platform.OS === 'android' ? 'http://3.82.197.254:3000/ProDeskApi' : 'http://localhost:3000/ProDeskApi'
 })
 
 api.interceptors.request.use(async (config) => {
