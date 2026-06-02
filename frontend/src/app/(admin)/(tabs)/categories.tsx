@@ -89,35 +89,6 @@ export default function Categories() {
           </TouchableOpacity>
         </View>
 
-        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8 max-h-10">
-          {['Todos', 'Ativos', 'Inativos'].map((filter, index) => (
-            <TouchableOpacity
-              key={filter}
-              className={`px-4 py-2 rounded-full mr-2 ${index === 0 ? 'bg-orange-500' : 'bg-slate-50 border border-slate-200'}`}
-            >
-              <Text className={`font-medium ${index === 0 ? 'text-white' : 'text-slate-500'}`}>
-                {filter}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <View
-          className={`flex-row items-center rounded-xl px-4 mb-6 py-3 border ${
-            focused ? 'bg-white border-orange-500' : 'bg-white border-gray-200'
-          }`}
-        >
-          <Feather name="search" size={20} color={focused ? '#F97316' : '#9CA3AF'} />
-
-          <TextInput
-            placeholder="Procure categoria por nome"
-            placeholderTextColor="#9CA3AF"
-            className="ml-3 flex-1 text-gray-700"
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-          />
-        </View> */}
-
         {loading ? (
           <ActivityIndicator size="large" color="#F97316" className="mt-10" />
         ) : (

@@ -17,8 +17,14 @@ interface Company {
 export default function Companies () {
     const router = useRouter();
     const [focused, setFocused] = useState(false)
+    const [search, setSearch] = useState('')
     const [companies, setCompanies] =  useState<Company[]>([])
     const [loading, setLoading ] = useState(true)
+
+    const filteredCompanies = companies.filter(company => 
+        company.name.toLowerCase().includes(search.toLowerCase()) || 
+        company.cnpj.includes(search)
+    )
     const [isEditModalVisible, setIsEditModalVisible] = useState(false)
     const [companyToEdit, setCompanyToEdit] = useState<Company | null>(null)
 
@@ -94,19 +100,6 @@ export default function Companies () {
                     </TouchableOpacity>
                 </View>
 
-                {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8">
-                    {['Todos', 'Alfabética', 'Mais Recentes', 'Mais Antigas'].map((filter, index) => (
-                        <TouchableOpacity
-                        key={filter}
-                        className={`px-4 py-2 rounded-full mr-2 ${index === 0 ? 'bg-orange-500' : 'bg-slate-50 border border-slate-100'}`}
-                        >
-                        <Text className={`font-medium ${index === 0 ? 'text-white' : 'text-slate-500'}`}>
-                            {filter}
-                        </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
                 <View
                     className={`flex-row items-center rounded-xl px-4 py-3 border mb-6 ${
                         focused
@@ -124,15 +117,17 @@ export default function Companies () {
                         placeholder="Procure por nome ou CNPJ"
                         placeholderTextColor="#9CA3AF"
                         className="ml-3 flex-1 text-gray-700"
+                        value={search}
+                        onChangeText={setSearch}
                         onFocus={() => setFocused(true)}
                         onBlur={() => setFocused(false)}
                     />
-                </View> */}
+                </View> 
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#F97316" className='mt-10' />
                 ) : (
-                    companies?.map(company => (
+                    filteredCompanies?.map(company => (
                         <CompanyCard
                             key={company.id}
                             id={company.id}
