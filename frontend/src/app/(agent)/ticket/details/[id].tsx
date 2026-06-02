@@ -100,6 +100,12 @@ export default function TicketDetails() {
       return;
     }
 
+    // ✅ Bloqueia se já estiver fechado
+    if (ticket?.status === 'CLOSED' || ticket?.status === 'RESOLVED') {
+      Alert.alert('Aviso', 'Este chamado já foi encerrado e não pode ser alterado.');
+      return;
+    }
+
     if (ticket?.agentId && ticket.agentId !== user.id) {
       Alert.alert('Aviso', 'Este chamado já está com outro atendente');
       return;
@@ -129,6 +135,12 @@ export default function TicketDetails() {
   };
 
   const handleOpenChat = async () => {
+    // ✅ Bloqueia abertura do chat se fechado
+    if (ticket?.status === 'CLOSED' || ticket?.status === 'RESOLVED') {
+      Alert.alert('Aviso', 'Este chamado já foi encerrado. O chat está fechado para novas mensagens.');
+      return;
+    }
+
     if (user?.role === 'support' && ticket?.agentId && ticket.agentId !== user.id) {
       setShowWarningModal(true);
       return;
@@ -155,6 +167,11 @@ export default function TicketDetails() {
   };
 
   const handleOpenEscalateModal = () => {
+    // ✅ Bloqueia escalonamento se fechado
+    if (ticket?.status === 'CLOSED' || ticket?.status === 'RESOLVED') {
+      Alert.alert('Aviso', 'Este chamado já foi encerrado e não pode ser escalonado.');
+      return;
+    }
 
     if (ticket?.status !== 'IN_PROGRESS') {
       Alert.alert('Aviso', 'O chamado precisa estar em andamento para ser escalonado.');
@@ -172,9 +189,7 @@ export default function TicketDetails() {
 
     setSelectedCategory(currentCategory || null);
     setSelectedEscalationLevel(ticket?.escalationLevel ?? 1);
-
     setEscalationMode(null);
-
     setShowEscalateModal(true);
   };
 
@@ -215,7 +230,7 @@ export default function TicketDetails() {
   };
 
   const handleOpenCloseModal = () => {
-    if (ticket?.status === 'CLOSED') {
+    if (ticket?.status === 'CLOSED' || ticket?.status === 'RESOLVED') {
       Alert.alert('Aviso', 'Este chamado já foi resolvido/fechado e não pode ser alterado.');
       return;
     }
@@ -252,6 +267,9 @@ export default function TicketDetails() {
       Alert.alert('Erro de Validação', errorMessage);
     }
   };
+
+  // ✅ Helper: verifica se ticket está encerrado
+  const isClosed = ticket?.status === 'CLOSED' || ticket?.status === 'RESOLVED';
 
   if (loading) {
     return (
@@ -301,8 +319,8 @@ export default function TicketDetails() {
           </View>
           <View className="flex-1">
             <View className="flex-row items-center mb-1.5">
-              <View className="w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-              <Text className="text-orange-500 font-bold text-xs uppercase tracking-wider">
+              <View className={`w-2.5 h-2.5 rounded-full mr-2 ${isClosed ? 'bg-emerald-500' : 'bg-orange-500'}`} />
+              <Text className={`font-bold text-xs uppercase tracking-wider ${isClosed ? 'text-emerald-500' : 'text-orange-500'}`}>
                 STATUS: {typeof ticket.status === 'object' ? ticket.status.name : ticket.status}
               </Text>
             </View>
@@ -361,17 +379,13 @@ export default function TicketDetails() {
             </View>
           </View>
           <View className="flex-1 pl-4">
-            <Text className="text-slate-400 text-xs font-bold mb-2">
-              NÍVEL
-            </Text>
-
+            <Text className="text-slate-400 text-xs font-bold mb-2">NÍVEL</Text>
             <View className="bg-orange-50 self-start px-3 py-1.5 rounded-lg">
               <Text className="text-orange-500 font-bold text-sm">
                 N{ticket.escalationLevel || 1}
               </Text>
             </View>
           </View>
-
           <View className="flex-1 pl-4">
             <Text className="text-slate-400 text-xs font-bold mb-2">DATA/HORA</Text>
             <View className="flex-row items-center mt-1">
@@ -385,7 +399,16 @@ export default function TicketDetails() {
 
         {/* BOTÕES */}
         <View className="px-6 pb-10">
-          {ticket.status === 'OPEN' || !ticket.agentId ? (
+
+          {/* ✅ Botão principal: bloqueia tudo se CLOSED/RESOLVED */}
+          {isClosed ? (
+            <View className="bg-gray-200 py-4 rounded-2xl flex-row justify-center items-center mb-4">
+              <Feather name="lock" size={20} color="#94a3b8" />
+              <Text className="text-slate-400 font-bold text-base ml-2">
+                Chamado Encerrado
+              </Text>
+            </View>
+          ) : ticket.status === 'OPEN' || !ticket.agentId ? (
             <TouchableOpacity
               onPress={handleAssignAgent}
               className="bg-orange-500 py-4 rounded-2xl flex-row justify-center items-center mb-4"
@@ -395,53 +418,65 @@ export default function TicketDetails() {
                 Atender Chamado
               </Text>
             </TouchableOpacity>
-            ) : (
-              user?.role === 'admin' || ticket.agentId === user?.id || ticket.clientId === user?.id ? (
-                <TouchableOpacity
-                  onPress={handleOpenChat}
-                  className="bg-orange-500 py-4 rounded-2xl flex-row justify-center items-center mb-4"
-                >
-                  <MaterialCommunityIcons name="reply" size={22} color="white" />
-                  <Text className="text-white font-bold text-base ml-2">
-                    Responder Cliente
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  activeOpacity={1} 
-                  onPress={handleOpenChat} 
-                  className="bg-gray-200 py-4 rounded-2xl flex-row justify-center items-center mb-4"
-                >
-                  <MaterialCommunityIcons name="lock-outline" size={22} color="#64748b" />
-                  <Text className="text-slate-500 font-bold text-base ml-2">
-                    Em atendimento por outro colaborador
-                  </Text>
-                </TouchableOpacity>
-              )
-            )}
+          ) : user?.role === 'admin' || ticket.agentId === user?.id || ticket.clientId === user?.id ? (
+            <TouchableOpacity
+              onPress={handleOpenChat}
+              className="bg-orange-500 py-4 rounded-2xl flex-row justify-center items-center mb-4"
+            >
+              <MaterialCommunityIcons name="reply" size={22} color="white" />
+              <Text className="text-white font-bold text-base ml-2">
+                Responder Cliente
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleOpenChat}
+              className="bg-gray-200 py-4 rounded-2xl flex-row justify-center items-center mb-4"
+            >
+              <MaterialCommunityIcons name="lock-outline" size={22} color="#64748b" />
+              <Text className="text-slate-500 font-bold text-base ml-2">
+                Em atendimento por outro colaborador
+              </Text>
+            </TouchableOpacity>
+          )}
 
+          {/* ✅ Escalonar: desabilitado visualmente se CLOSED */}
           <TouchableOpacity
             onPress={handleOpenEscalateModal}
-            className="bg-transparent border-2 border-orange-400 py-4 rounded-2xl flex-row justify-center items-center mb-4"
+            disabled={isClosed}
+            className={`border-2 py-4 rounded-2xl flex-row justify-center items-center mb-4 ${
+              isClosed
+                ? 'border-gray-200 bg-gray-50 opacity-50'
+                : 'border-orange-400 bg-transparent'
+            }`}
           >
-            <Feather name="trending-up" size={20} color="#f97316" />
-            <Text className="text-orange-500 font-bold text-base ml-2">
+            <Feather name="trending-up" size={20} color={isClosed ? '#94a3b8' : '#f97316'} />
+            <Text className={`font-bold text-base ml-2 ${isClosed ? 'text-gray-400' : 'text-orange-500'}`}>
               Escalonar Chamado
             </Text>
           </TouchableOpacity>
 
+          {/* ✅ Fechar: desabilitado visualmente se CLOSED */}
           <TouchableOpacity
             onPress={handleOpenCloseModal}
-            className="bg-transparent border-2 border-red-500 py-4 rounded-2xl flex-row justify-center items-center"
+            disabled={isClosed}
+            className={`border-2 py-4 rounded-2xl flex-row justify-center items-center ${
+              isClosed
+                ? 'border-gray-200 bg-gray-50 opacity-50'
+                : 'border-red-500 bg-transparent'
+            }`}
           >
-            <Feather name="check-circle" size={20} color="#ef4444" />
-            <Text className="text-red-500 font-bold text-base ml-2">
+            <Feather name="check-circle" size={20} color={isClosed ? '#94a3b8' : '#ef4444'} />
+            <Text className={`font-bold text-base ml-2 ${isClosed ? 'text-gray-400' : 'text-red-500'}`}>
               Fechar Chamado
             </Text>
           </TouchableOpacity>
+
         </View>
       </ScrollView>
 
+      {/* MODAL: ESCALONAR */}
       <Modal
         visible={showEscalateModal}
         transparent={true}
@@ -459,7 +494,6 @@ export default function TicketDetails() {
               Escalonar Chamado
             </Text>
 
-            {/* SELEÇÃO DE DESTINO (SETOR/CATEGORIA) */}
             <Text className="text-slate-500 font-medium mb-2 text-sm">
               Para qual setor deseja enviar?
             </Text>
@@ -472,8 +506,6 @@ export default function TicketDetails() {
                   onPress={() => {
                     setEscalationMode('CATEGORY');
                     setSelectedCategory(cat);
-
-                    // ao mudar categoria, nível volta para 1
                     setSelectedEscalationLevel(1);
                   }}
                   className={`px-4 py-2 rounded-xl border mr-2 mb-2 ${
@@ -497,8 +529,6 @@ export default function TicketDetails() {
               ))}
             </View>
 
-
-            {/* SELEÇÃO DE NÍVEL */}
             <Text className="text-slate-500 font-medium mb-2 text-sm">
               Selecione o nível de escalonamento
             </Text>
@@ -533,7 +563,6 @@ export default function TicketDetails() {
               ))}
             </View>
 
-            {/* CAMPO DE TEXTO: O QUE FOI FEITO */}
             <Text className="text-slate-500 font-medium mb-2 text-sm">
               Descreva o que já foi tentado:
             </Text>
@@ -547,7 +576,6 @@ export default function TicketDetails() {
               onChangeText={setEscalateReason}
             />
 
-            {/* BOTÕES DE AÇÃO */}
             <View className="flex-row justify-between">
               <TouchableOpacity
                 onPress={() => setShowEscalateModal(false)}
@@ -569,6 +597,7 @@ export default function TicketDetails() {
         </View>
       </Modal>
 
+      {/* MODAL: MENU */}
       <Modal
         visible={isMenuVisible}
         transparent={true}
@@ -606,6 +635,7 @@ export default function TicketDetails() {
         </Pressable>
       </Modal>
 
+      {/* MODAL: AVISO ACESSO RESTRITO */}
       <Modal
         visible={showWarningModal}
         transparent={true}
@@ -622,14 +652,12 @@ export default function TicketDetails() {
               <View className="w-12 h-1.5 bg-gray-200 rounded-full" />
             </View>
 
-            {/* Ícone */}
             <View className="items-center mb-4">
               <View className="w-16 h-16 bg-red-50 rounded-full items-center justify-center">
                 <Feather name="shield-off" size={28} color="#ef4444" />
               </View>
             </View>
 
-            {/* Textos */}
             <Text className="text-2xl font-bold text-slate-800 text-center mb-2">
               Acesso Restrito
             </Text>
@@ -637,7 +665,6 @@ export default function TicketDetails() {
               Este chamado já está sendo atendido por outro especialista. Apenas o responsável pode visualizar e enviar mensagens.
             </Text>
 
-            {/* Botão de Ação Primária */}
             <TouchableOpacity
               onPress={() => setShowWarningModal(false)}
               className="bg-slate-800 py-4 rounded-2xl items-center"
@@ -651,7 +678,7 @@ export default function TicketDetails() {
         </Pressable>
       </Modal>
 
-      {/* MODAL DE RESOLVER (FECHAR) CHAMADO */}
+      {/* MODAL: FECHAR CHAMADO */}
       <Modal
         visible={showCloseModal}
         transparent={true}
@@ -661,7 +688,6 @@ export default function TicketDetails() {
         <View className="flex-1 justify-end bg-black/50">
           <View className="bg-white pt-4 pb-8 px-6 rounded-t-3xl shadow-2xl">
             
-            {/* Tracinho de arrastar */}
             <View className="items-center mb-6">
               <View className="w-12 h-1.5 bg-gray-200 rounded-full" />
             </View>
@@ -683,7 +709,6 @@ export default function TicketDetails() {
               onChangeText={setCloseSolution}
             />
 
-            {/* BOTÕES DE AÇÃO */}
             <View className="flex-row justify-between">
               <TouchableOpacity
                 onPress={() => {

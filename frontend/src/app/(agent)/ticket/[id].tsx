@@ -21,7 +21,6 @@ export default function AgentTicketChatScreen() {
   
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
-  
   const namesCache = useRef<Record<string, string>>({});
 
   const checkTicketStatus = async () => {
@@ -30,7 +29,9 @@ export default function AgentTicketChatScreen() {
       const ticketId = chatRes.data.ticketId;
       if (ticketId) {
         const ticketRes = await api.get(`/tickets/${ticketId}`);
-        if (ticketRes.data.status === 'CLOSED' || ticketRes.data.status === 'RESOLVED') {
+        const status = ticketRes.data.status;
+        // ✅ Atualiza estado — garante que nunca "reabre" se já estava fechado
+        if (status === 'CLOSED' || status === 'RESOLVED') {
           setIsTicketClosed(true);
         }
       }
@@ -46,7 +47,7 @@ export default function AgentTicketChatScreen() {
   }, [id, user?.token]);
 
   useEffect(() => {
-   if (!user?.token) return;
+    if (!user?.token) return;
 
     const socketUrl = api.defaults.baseURL?.replace('/ProDeskApi', '') || 'http://10.0.2.2:3000';
 
@@ -100,26 +101,36 @@ export default function AgentTicketChatScreen() {
       
       setMessages(history);
       setIsLoadingHistory(false);
+
+      // ✅ FIX 1: Re-verifica status após carregar histórico,
+      // pois o ticket pode já estar fechado antes de entrar na tela
+      await checkTicketStatus();
     });
 
-   socket.on('novaMensagem', async (msg: any) => {
+    socket.on('novaMensagem', async (msg: any) => {
       const isMe = msg.senderId === user.id;
       let senderName = 'Usuário';
       let senderRole = 'client';
 
       if (!isMe && !msg.isSystemMessage) {
-          if (!namesCache.current[msg.senderId]) {
-            try {
-              const res = await api.get(`/user/${msg.senderId}`);
-              namesCache.current[msg.senderId] = res.data.name.split(' ')[0];
-              namesCache.current[`role_${msg.senderId}`] = res.data.role;
-            } catch(e) {
-              namesCache.current[msg.senderId] = 'Usuário';
-              namesCache.current[`role_${msg.senderId}`] = 'client';
-            }
+        if (!namesCache.current[msg.senderId]) {
+          try {
+            const res = await api.get(`/user/${msg.senderId}`);
+            namesCache.current[msg.senderId] = res.data.name.split(' ')[0];
+            namesCache.current[`role_${msg.senderId}`] = res.data.role;
+          } catch(e) {
+            namesCache.current[msg.senderId] = 'Usuário';
+            namesCache.current[`role_${msg.senderId}`] = 'client';
           }
-          senderName = namesCache.current[msg.senderId] || 'Usuário';
-          senderRole = namesCache.current[`role_${msg.senderId}`] || 'client';
+        }
+        senderName = namesCache.current[msg.senderId] || 'Usuário';
+        senderRole = namesCache.current[`role_${msg.senderId}`] || 'client';
+      }
+
+      // ✅ FIX 2: Detecta fechamento em tempo real via mensagem de sistema
+      // Re-consulta a API sempre que chegar mensagem de sistema
+      if (msg.isSystemMessage) {
+        await checkTicketStatus();
       }
 
       setMessages((prev) => [...prev, {
@@ -134,6 +145,13 @@ export default function AgentTicketChatScreen() {
       } as MessageType]);
     });
 
+    // ✅ FIX 3: Evento dedicado de atualização de status do ticket (se o backend emitir)
+    socket.on('ticketAtualizado', (data: { ticketId: string, status: string }) => {
+      if (data.status === 'CLOSED' || data.status === 'RESOLVED') {
+        setIsTicketClosed(true);
+      }
+    });
+
     return () => {
       socket.emit('sairChat', { chatId: id });
       socket.disconnect();
@@ -141,32 +159,31 @@ export default function AgentTicketChatScreen() {
   }, [id, user]);
 
   const handlePickAndSendFile = async () => {
-  if (isTicketClosed) return;
-  try {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: '*/*',
-      multiple: true,
-    });
+    if (isTicketClosed) return;
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        multiple: true,
+      });
 
-    if (!result.canceled) {
-      for (const file of result.assets) {
-        const fileUrl = await uploadFile(file.uri, file.name);
+      if (!result.canceled) {
+        for (const file of result.assets) {
+          const fileUrl = await uploadFile(file.uri, file.name);
+          const isImage = file.name.match(/\.(jpeg|jpg|gif|png)$/i);
+          const messageType = isImage ? 'IMAGE' : 'FILE';
 
-        const isImage = file.name.match(/\.(jpeg|jpg|gif|png)$/i);
-        const messageType = isImage ? 'IMAGE' : 'FILE';
-
-        socketRef.current?.emit('enviarMensagem', {
-          chatId: id,
-          content: isImage ? 'Imagem enviada' : 'Arquivo enviado',
-          attachmentUrl: fileUrl,
-          type: messageType,
-        });
+          socketRef.current?.emit('enviarMensagem', {
+            chatId: id,
+            content: isImage ? 'Imagem enviada' : 'Arquivo enviado',
+            attachmentUrl: fileUrl,
+            type: messageType,
+          });
+        }
       }
+    } catch (error) {
+      console.log('ERRO COMPLETO:', error);
     }
-  } catch (error) {
-    console.log('ERRO COMPLETO:', error);
-  }
-};
+  };
 
   const handleSendMessage = () => {
     if (!inputText.trim() || isTicketClosed) return;
@@ -183,7 +200,9 @@ export default function AgentTicketChatScreen() {
             <Ionicons name="arrow-back" size={24} color="#1e293b" />
           </TouchableOpacity>
           <View>
-            <Text className="text-lg font-bold text-slate-800">Atendimento #{typeof id === 'string' ? id.slice(-6).toUpperCase() : '...'}</Text>
+            <Text className="text-lg font-bold text-slate-800">
+              Atendimento #{typeof id === 'string' ? id.slice(-6).toUpperCase() : '...'}
+            </Text>
             <Text className="text-blue-500 font-bold text-xs">SALA DO CLIENTE</Text>
           </View>
         </View>
@@ -217,15 +236,8 @@ export default function AgentTicketChatScreen() {
           </View>
         ) : (
           <View className="flex-row items-center px-4 py-3 border-t border-slate-100 bg-white">
-            <TouchableOpacity
-              onPress={handlePickAndSendFile}
-              className="p-2"
-            >
-              <Feather
-                name="plus-circle"
-                size={24}
-                color="#94a3b8"
-              />
+            <TouchableOpacity onPress={handlePickAndSendFile} className="p-2">
+              <Feather name="plus-circle" size={24} color="#94a3b8" />
             </TouchableOpacity>
             <View className="flex-1 flex-row items-center bg-slate-50 border border-slate-200 rounded-full px-4 h-12 mx-2">
               <TextInput

@@ -89,7 +89,7 @@ export default function Categories() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8 max-h-10">
+        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8 max-h-10">
           {['Todos', 'Ativos', 'Inativos'].map((filter, index) => (
             <TouchableOpacity
               key={filter}
@@ -116,7 +116,7 @@ export default function Categories() {
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
           />
-        </View>
+        </View> */}
 
         {loading ? (
           <ActivityIndicator size="large" color="#F97316" className="mt-10" />

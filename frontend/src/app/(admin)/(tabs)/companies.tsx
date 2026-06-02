@@ -94,7 +94,7 @@ export default function Companies () {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8">
+                {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8">
                     {['Todos', 'Alfabética', 'Mais Recentes', 'Mais Antigas'].map((filter, index) => (
                         <TouchableOpacity
                         key={filter}
@@ -127,7 +127,7 @@ export default function Companies () {
                         onFocus={() => setFocused(true)}
                         onBlur={() => setFocused(false)}
                     />
-                </View>
+                </View> */}
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#F97316" className='mt-10' />

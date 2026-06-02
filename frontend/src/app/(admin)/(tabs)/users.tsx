@@ -111,7 +111,7 @@ export default function Users () {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8">
+                {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8">
                     {['Todos', 'Clientes', 'Atendentes', 'Administradores'].map((filter, index) => (
                         <TouchableOpacity
                         key={filter}
@@ -137,7 +137,7 @@ export default function Users () {
                         onFocus={() => setFocused(true)}
                         onBlur={() => setFocused(false)}
                     />
-                </View>
+                </View> */}
 
                 <TouchableOpacity 
                     onPress={() => router.push('/(admin)/accessRequests')}
