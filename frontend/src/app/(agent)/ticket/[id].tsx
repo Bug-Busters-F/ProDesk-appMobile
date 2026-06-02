@@ -30,7 +30,7 @@ export default function AgentTicketChatScreen() {
       const ticketId = chatRes.data.ticketId;
       if (ticketId) {
         const ticketRes = await api.get(`/tickets/${ticketId}`);
-        if (ticketRes.data.status === 'CLOSED') {
+        if (ticketRes.data.status === 'CLOSED' || ticketRes.data.status === 'RESOLVED') {
           setIsTicketClosed(true);
         }
       }
@@ -40,10 +40,10 @@ export default function AgentTicketChatScreen() {
   };
 
   useEffect(() => {
-    if (id) {
+    if (id && user?.token) {
       checkTicketStatus();
     }
-  }, [id]);
+  }, [id, user?.token]);
 
   useEffect(() => {
    if (!user?.token) return;
@@ -141,6 +141,7 @@ export default function AgentTicketChatScreen() {
   }, [id, user]);
 
   const handlePickAndSendFile = async () => {
+  if (isTicketClosed) return;
   try {
     const result = await DocumentPicker.getDocumentAsync({
       type: '*/*',
@@ -168,7 +169,7 @@ export default function AgentTicketChatScreen() {
 };
 
   const handleSendMessage = () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isTicketClosed) return;
     socketRef.current?.emit('enviarMensagem', { chatId: id, content: inputText.trim() });
     setInputText('');
   };
