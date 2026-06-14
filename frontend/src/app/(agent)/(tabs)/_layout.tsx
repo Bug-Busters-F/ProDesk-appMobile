@@ -3,7 +3,7 @@ import { FontAwesome } from '@expo/vector-icons';
 
 export default function AgentTabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: '#f97316', tabBarStyle: { height: 60 } }}>
+    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: '#f97316' }}>
       <Tabs.Screen 
         name="agentHome" 
         options={{ 

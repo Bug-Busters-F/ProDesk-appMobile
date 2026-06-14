@@ -12,7 +12,8 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "package": "com.prodesk.app"
+      "package": "com.prodesk.app",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "bundler": "metro",

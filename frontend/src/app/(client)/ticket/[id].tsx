@@ -229,7 +229,11 @@ export default function TicketChatScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
         
         <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-100 shadow-sm z-10 bg-white">
           <View className="flex-row items-center flex-1 mr-4">
@@ -307,9 +311,6 @@ export default function TicketChatScreen() {
                 onChangeText={setInputText}
                 onSubmitEditing={handleSendMessage}
               />
-              <TouchableOpacity disabled={!inputText.trim()}>
-                <Feather name="smile" size={20} color={inputText.trim() ? "#f97316" : "#94a3b8"} />
-              </TouchableOpacity>
             </View>
 
             <TouchableOpacity 
