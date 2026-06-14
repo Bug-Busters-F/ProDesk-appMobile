@@ -17,6 +17,7 @@ export default function TicketDetails() {
     company: '...',
   });
   const [loading, setLoading] = useState(true);
+  const [isAssigning, setIsAssigning] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showEscalateModal, setShowEscalateModal] = useState(false);
@@ -95,10 +96,7 @@ export default function TicketDetails() {
   };
 
   const handleAssignAgent = async () => {
-    if (!user) {
-      Alert.alert('Erro', 'Usuário não autenticado');
-      return;
-    }
+    if (!user || isAssigning) return;
 
     // ✅ Bloqueia se já estiver fechado
     if (ticket?.status === 'CLOSED' || ticket?.status === 'RESOLVED') {
@@ -111,26 +109,37 @@ export default function TicketDetails() {
       return;
     }
 
+    // ✅ Verifica se o status era OPEN ou ESCALATED antes de mudar
+    const wasOpenOrEscalated = ticket?.status === 'OPEN' || ticket?.status === 'ESCALATED';
+
     try {
+      setIsAssigning(true);
       await api.put(`/tickets/${id}/status`, {
         status: 'IN_PROGRESS',
       });
+      
       await fetchTicket();
-      let realName = user.name;
-      try {
-        const userRes = await api.get(`/user/${user.id}`);
-        if (userRes.data && userRes.data.name) {
-           realName = userRes.data.name;
+
+      // ✅ Só envia mensagem se ele realmente estava na fila (evita duplicidade)
+      if (wasOpenOrEscalated) {
+        let realName = user.name;
+        try {
+          const userRes = await api.get(`/user/${user.id}`);
+          if (userRes.data && userRes.data.name) {
+             realName = userRes.data.name;
+          }
+        } catch (err) {
+          console.log("Não foi possível buscar o nome real do atendente", err);
         }
-      } catch (err) {
-        console.log("Não foi possível buscar o nome real do atendente", err);
+        await sendSystemMessage(`👋 Olá! O especialista ${realName} acaba de assumir o seu chamado. Como podemos ajudar?`);
       }
-      await sendSystemMessage(`👋 Olá! O especialista ${realName} acaba de assumir o seu chamado. Como podemos ajudar?`);
       
       handleOpenChat();
     } catch (error: any) {
       console.log(error?.response?.data || error);
       Alert.alert('Erro', 'Não foi possível assumir o chamado');
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -411,12 +420,19 @@ export default function TicketDetails() {
           ) : ticket.status === 'OPEN' || !ticket.agentId ? (
             <TouchableOpacity
               onPress={handleAssignAgent}
-              className="bg-orange-500 py-4 rounded-2xl flex-row justify-center items-center mb-4"
+              disabled={isAssigning}
+              className={`py-4 rounded-2xl flex-row justify-center items-center mb-4 ${isAssigning ? 'bg-orange-300' : 'bg-orange-500'}`}
             >
-              <MaterialCommunityIcons name="account-check" size={22} color="white" />
-              <Text className="text-white font-bold text-base ml-2">
-                Atender Chamado
-              </Text>
+              {isAssigning ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="account-check" size={22} color="white" />
+                  <Text className="text-white font-bold text-base ml-2">
+                    Atender Chamado
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
           ) : user?.role === 'admin' || ticket.agentId === user?.id || ticket.clientId === user?.id ? (
             <TouchableOpacity
