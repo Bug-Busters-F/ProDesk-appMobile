@@ -158,13 +158,13 @@ export default function ClientProfile() {
   };
 
   return (
-    <SafeAreaView className='flex-1 bg-stone-50 dark:bg-stone-950'>
+    <SafeAreaView className='flex-1 bg-stone-50'>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className='px-6 pt-10'>
         
         {/* Cabeçalho de Perfil */}
         <View className='items-center mb-8'>
           <View className='relative'>
-            <View className='w-32 h-32 rounded-full bg-stone-200 dark:bg-stone-800 items-center justify-center border-4 border-white dark:border-stone-900 shadow-sm overflow-hidden'>
+            <View className='w-32 h-32 rounded-full bg-stone-200 items-center justify-center border-4 border-white shadow-sm overflow-hidden'>
               {image ? (
                 <>
                   <Image
@@ -190,7 +190,7 @@ export default function ClientProfile() {
             
             <TouchableOpacity 
               onPress={handlePickImage}
-              className='absolute bottom-0 right-0 bg-orange-500 p-2 rounded-full border-2 border-white dark:border-stone-900'
+              className='absolute bottom-0 right-0 bg-orange-500 p-2 rounded-full border-2 border-white'
             >
               <Ionicons name="camera" size={20} color="white" />
             </TouchableOpacity>
@@ -209,42 +209,42 @@ export default function ClientProfile() {
         </View>
 
         {/* Card de Informações do Usuário */}
-        <View className='bg-white dark:bg-stone-900 p-6 rounded-3xl shadow-sm mb-6'>
-          <Text className='text-gray-400 dark:text-gray-500 text-xs font-bold uppercase mb-4'>Informações da Conta</Text>
+        <View className='bg-white p-6 rounded-3xl shadow-sm mb-6'>
+          <Text className='text-gray-400 text-xs font-bold uppercase mb-4'>Informações da Conta</Text>
           
           <View className='gap-y-4'>
             <View>
-              <Text className='text-gray-500 dark:text-gray-400 text-sm'>Nome</Text>
+              <Text className='text-gray-500 text-sm'>Nome</Text>
               {isLoadingData ? (
                 <ActivityIndicator size="small" color="#f97316" className='self-start mt-1' />
               ) : (
-                <Text className='text-lg font-semibold text-stone-900 dark:text-white'>
+                <Text className='text-lg font-semibold text-stone-900'>
                   {user?.name || 'Usuário'}
                 </Text>
               )}
             </View>
 
-            <View className='h-[1px] bg-stone-100 dark:bg-stone-800' />
+            <View className='h-[1px] bg-stone-100' />
 
             <View>
-              <Text className='text-gray-500 dark:text-gray-400 text-sm'>E-mail</Text>
+              <Text className='text-gray-500 text-sm'>E-mail</Text>
               {isLoadingData ? (
                 <ActivityIndicator size="small" color="#f97316" className='self-start mt-1' />
               ) : (
-                <Text className='text-lg font-semibold text-stone-900 dark:text-white'>
+                <Text className='text-lg font-semibold text-stone-900'>
                   {user?.email || 'email@exemplo.com'}
                 </Text>
               )}
             </View>
 
-            <View className='h-[1px] bg-stone-100 dark:bg-stone-800' />
+            <View className='h-[1px] bg-stone-100' />
 
             <View>
-              <Text className='text-gray-500 dark:text-gray-400 text-sm'>Empresa</Text>
+              <Text className='text-gray-500 text-sm'>Empresa</Text>
               {isLoadingData ? (
                 <ActivityIndicator size="small" color="#f97316" className='self-start mt-1' />
               ) : (
-                <Text className='text-lg font-semibold text-stone-900 dark:text-white'>
+                <Text className='text-lg font-semibold text-stone-900'>
                   {companyName || 'Empresa não informada'}
                 </Text>
               )}
@@ -255,14 +255,14 @@ export default function ClientProfile() {
         <View className='mt-auto pt-6 pb-8'>
           <TouchableOpacity 
             onPress={handleLogout}
-            className='bg-red-50 dark:bg-red-950/30 p-4 rounded-3xl flex-row items-center justify-center gap-x-2 mb-8'
+            className='bg-red-50 p-4 rounded-3xl flex-row items-center justify-center gap-x-2 mb-8'
           >
             <Ionicons name="log-out-outline" size={24} color="#ef4444" />
             <Text className='text-red-500 font-bold text-lg'>Sair da Conta</Text>
           </TouchableOpacity>
           
           <View className='items-center'>
-            <Text className='text-sm text-gray-300 dark:text-gray-600'>
+            <Text className='text-sm text-gray-300'>
               © 2026 ProDesk. Todos os direitos reservados.
             </Text>
           </View>

@@ -2,7 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import UserCard from '@/components/user/UserCard';
 import api from '@/services/api';
 import EditUserModal from '@/components/user/EditUserModal';
@@ -21,6 +21,8 @@ interface User {
 export default function Users () {
     const router = useRouter();
     const [focused, setFocused] = useState(false);
+    const [search, setSearch] = useState('');
+    const [activeFilter, setActiveFilter] = useState('Todos');
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -30,18 +32,32 @@ export default function Users () {
 
     const [photoRefreshToken, setPhotoRefreshToken] = useState(0);
 
+    const filteredUsers = users.filter(user => 
+        user.name.toLowerCase().includes(search.toLowerCase()) || 
+        user.email.toLowerCase().includes(search.toLowerCase())
+    );
+
     const fetchUsers = async (pageNumber: number = 1) => {
         try {
             setLoading(true);
-            const response = await api.get('/user', {
-                params: { page: pageNumber, limit: 10 }
-            });
+            const params: any = { page: pageNumber, limit: 50 }; // Aumentado o limite para busca local mais eficaz
+            
+            if (activeFilter !== 'Todos') {
+                const roleMap: Record<string, string> = {
+                    'Administrador': 'admin',
+                    'Atendente': 'support',
+                    'Cliente': 'client'
+                }
+                params.role = roleMap[activeFilter];
+            }
+
+            const response = await api.get('/user', { params });
             
             const fetchedUsers = response.data.data || response.data.users || response.data.items || (Array.isArray(response.data) ? response.data : []);
             setUsers(fetchedUsers);
             
             const meta = response.data.meta || response.data;
-            const calcTotalPages = meta.totalPages || (fetchedUsers.length === 10 ? pageNumber + 1 : pageNumber);
+            const calcTotalPages = meta.totalPages || (fetchedUsers.length === 50 ? pageNumber + 1 : pageNumber);
             setTotalPages(calcTotalPages);
             setPage(pageNumber);
 
@@ -53,11 +69,15 @@ export default function Users () {
         }
     }
 
+    useEffect(() => {
+        fetchUsers(1);
+    }, [activeFilter]);
+
     useFocusEffect(
         useCallback(() => {
             fetchUsers(1);
             setPhotoRefreshToken(prev => prev + 1);
-        }, [])
+        }, [activeFilter])
     )
 
     const roleNames: Record<string, string> = {
@@ -111,21 +131,8 @@ export default function Users () {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8">
-                    {['Todos', 'Clientes', 'Atendentes', 'Administradores'].map((filter, index) => (
-                        <TouchableOpacity
-                        key={filter}
-                        className={`px-4 py-2 rounded-full mr-2 ${index === 0 ? 'bg-orange-500' : 'bg-slate-50 border border-slate-100'}`}
-                        >
-                        <Text className={`font-medium ${index === 0 ? 'text-white' : 'text-slate-500'}`}>
-                            {filter}
-                        </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
                 <View
-                    className={`flex-row items-center rounded-xl px-4 mb-10 py-3 border ${
+                    className={`flex-row items-center rounded-xl px-4 mb-6 py-3 border ${
                         focused ? "bg-white border-orange-500" : "bg-gray-100 border-transparent"
                     }`}
                     >
@@ -134,10 +141,29 @@ export default function Users () {
                         placeholder="Procure por nome"
                         placeholderTextColor="#9CA3AF"
                         className="ml-3 flex-1 text-gray-700"
+                        value={search}
+                        onChangeText={setSearch}
                         onFocus={() => setFocused(true)}
                         onBlur={() => setFocused(false)}
                     />
-                </View>
+                </View> 
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-10 h-12" contentContainerStyle={{ paddingBottom: 8 }}>
+                  {['Todos', 'Administrador', 'Atendente', 'Cliente'].map((filter) => {
+                    const isActive = activeFilter === filter;
+                    return (
+                      <TouchableOpacity
+                        key={filter}
+                        onPress={() => setActiveFilter(filter)}
+                        className={`px-5 py-2 rounded-full mr-3 h-10 items-center justify-center ${isActive ? 'bg-orange-500' : 'bg-orange-50'}`}
+                      >
+                        <Text className={`font-bold ${isActive ? 'text-white' : 'text-orange-500'}`}>
+                          {filter}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
 
                 <TouchableOpacity 
                     onPress={() => router.push('/(admin)/accessRequests')}
@@ -158,7 +184,7 @@ export default function Users () {
                 {loading ? (
                     <ActivityIndicator size="large" color="#F97316" className='mt-10' />
                 ) : (
-                    users?.map(user => {
+                    filteredUsers?.map(user => {
                         const safeRole = user.role?.toLowerCase();
                         const translatedRole = roleNames[safeRole] || user.role;
                         const userId = user.id || (user._id as string);
@@ -178,7 +204,7 @@ export default function Users () {
                     })
                 )}
 
-                {users.length === 0 && !loading && (
+                {filteredUsers.length === 0 && !loading && (
                     <Text className="text-center text-gray-500 mt-10 mb-10">
                         Nenhum usuário encontrado.
                     </Text>

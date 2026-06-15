@@ -6,21 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/images/ProDesk-Logo.png",
     "scheme": "frontend",
-    "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/ProDesk-Logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "splash": {
-        "backgroundColor": "#ffffff"
-      },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.frontend"
+      "package": "com.prodesk.app",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "bundler": "metro",
@@ -34,6 +27,12 @@
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "32fb99d8-6d83-4628-b0df-4e6b0cfa1c05"
+      }
     }
   }
 }

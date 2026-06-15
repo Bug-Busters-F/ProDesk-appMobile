@@ -3,7 +3,7 @@ import { FontAwesome, MaterialIcons, Feather, MaterialCommunityIcons } from '@ex
 
 export default function AdminTabsLayout () {
     return (
-    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: '#f97316', tabBarStyle: { height: 60 } }}>
+    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: '#f97316' }}>
       <Tabs.Screen 
         name="adminHome" 
         options={{ title: 'Início', tabBarIcon: ({ color }) => <FontAwesome name="home" size={24} color={color} /> }}

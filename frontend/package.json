@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "android-build": "eas build -p android --profile preview",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eas-cli": "^20.1.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-config-universe": "^15.0.3",
